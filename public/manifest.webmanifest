@@ -1,0 +1,10 @@
+{
+  "name": "EnglishMan",
+  "short_name": "EnglishMan",
+  "description": "Aralıklı tekrar ve görsel çağrışımla İngilizce kelime öğren.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f5fb",
+  "theme_color": "#4f46e5",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
