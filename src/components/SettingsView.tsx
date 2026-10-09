@@ -1,13 +1,15 @@
 import { useRef, useState } from 'react';
+import { LEVELS } from '../data/words';
 import { canSpeak, speak } from '../lib/speech';
 import { emptyProgress, parseProgress, type Progress, type Settings } from '../lib/storage';
 
 interface Props {
   progress: Progress;
   onChange: (p: Progress) => void;
+  onChangeLevel: () => void;
 }
 
-export function SettingsView({ progress, onChange }: Props) {
+export function SettingsView({ progress, onChange, onChangeLevel }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
   const s = progress.settings;
@@ -34,6 +36,14 @@ export function SettingsView({ progress, onChange }: Props) {
   return (
     <div className="settings">
       <div className="card">
+        <div className="setting setting-inline">
+          <span>
+            Seviye: <b>{s.level}</b> — {s.level && LEVELS[s.level].name}
+          </span>
+          <button className="btn" onClick={onChangeLevel}>
+            Değiştir
+          </button>
+        </div>
         <label className="setting">
           <span>
             Günlük yeni kelime: <b>{s.newPerDay}</b>

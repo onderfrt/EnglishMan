@@ -28,7 +28,7 @@ export function LearnCard({ word, note, autoSpeak, onNote, onNext }: Props) {
   return (
     <div className="card">
       <div className="badge badge-new">Yeni kelime</div>
-      <WordDetails word={word} />
+      <WordDetails word={word} editable />
       <label className="note-input">
         <span>💭 Kendi çağrışımın (isteğe bağlı)</span>
         <input

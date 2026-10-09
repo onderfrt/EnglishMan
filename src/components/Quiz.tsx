@@ -5,6 +5,7 @@ import { choicesFor, type QuizMode } from '../lib/session';
 import { speak } from '../lib/speech';
 import { SpeakButton } from './Speak';
 import { WordDetails } from './WordDetails';
+import { WordVisual } from './WordVisual';
 
 interface Props {
   word: Word;
@@ -89,9 +90,7 @@ export function Quiz({ word, mode, note, autoSpeak, onAnswer, onNext }: Props) {
         <div className="question">
           {mode === 'choice-en-tr' && (
             <>
-              <div className="emoji-visual small" aria-hidden>
-                {word.emoji}
-              </div>
+              <WordVisual word={word} small />
               <div className="word-line">
                 <span className="word-en">{word.en}</span>
                 <SpeakButton text={word.en} />
@@ -100,9 +99,7 @@ export function Quiz({ word, mode, note, autoSpeak, onAnswer, onNext }: Props) {
           )}
           {(mode === 'choice-tr-en' || mode === 'type-tr-en') && (
             <>
-              <div className="emoji-visual small" aria-hidden>
-                {word.emoji}
-              </div>
+              <WordVisual word={word} small />
               <div className="word-tr big">{word.tr}</div>
             </>
           )}

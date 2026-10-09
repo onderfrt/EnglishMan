@@ -1,0 +1,66 @@
+import type { LevelData } from './types.ts';
+
+export const B1: LevelData = {
+  daily: [
+    ['laundry', 'çamaşır', 'noun', '🧺', 'I do the laundry on Sundays.', 'Pazar günleri çamaşır yıkarım.'],
+    ['queue', 'kuyruk, sıra', 'noun', '🧍', 'There was a long queue at the bank.', 'Bankada uzun bir kuyruk vardı.'],
+    ['habit', 'alışkanlık', 'noun', '🔁☕', 'Reading before bed is a good habit.', 'Yatmadan önce okumak iyi bir alışkanlıktır.'],
+    ['chore', 'ev işi', 'noun', '🧹', 'I hate household chores.', 'Ev işlerinden nefret ediyorum.'],
+  ],
+  feelings: [
+    ['embarrassed', 'utanmış, mahcup', 'adjective', '😳', 'I felt embarrassed when I fell.', 'Düştüğümde utandım.'],
+    ['disappointed', 'hayal kırıklığına uğramış', 'adjective', '😞', 'We were disappointed with the film.', 'Filmden hayal kırıklığına uğradık.'],
+    ['relieved', 'rahatlamış', 'adjective', '😌', 'I was relieved to hear the news.', 'Haberi duyunca rahatladım.'],
+    ['jealous', 'kıskanç', 'adjective', '😒', 'He is jealous of his brother.', 'Kardeşini kıskanıyor.'],
+    ['confident', 'kendinden emin', 'adjective', '😎', 'Be confident when you speak English.', 'İngilizce konuşurken kendinden emin ol.'],
+    ['grateful', 'minnettar', 'adjective', '🙏', "I'm grateful for your help.", 'Yardımın için minnettarım.'],
+  ],
+  work: [
+    ['colleague', 'iş arkadaşı', 'noun', '👩‍💼', 'My colleagues are very helpful.', 'İş arkadaşlarım çok yardımsever.'],
+    ['salary', 'maaş', 'noun', '💰', 'He gets a good salary.', 'İyi bir maaş alıyor.'],
+    ['deadline', 'son teslim tarihi', 'noun', '🏁⏰', 'The deadline for the project is Friday.', 'Projenin son teslim tarihi cuma.'],
+    ['achieve', 'başarmak, ulaşmak', 'verb', '🏆', 'You can achieve your goals.', 'Hedeflerine ulaşabilirsin.'],
+    ['degree', 'diploma (üniversite)', 'noun', '🎓', 'She has a degree in engineering.', 'Mühendislik diploması var.'],
+    ['hire', 'işe almak', 'verb', '📝', 'The company hired ten new people.', 'Şirket on yeni kişiyi işe aldı.'],
+    ['quit', '(işi) bırakmak', 'verb', '👋💼', 'He quit his job last month.', 'Geçen ay işini bıraktı.'],
+  ],
+  travel: [
+    ['abroad', 'yurt dışı(na/nda)', 'adverb', '🌐', "I've never been abroad.", 'Hiç yurt dışına gitmedim.'],
+    ['destination', 'varış yeri', 'noun', '📍', 'Paris is a popular destination.', 'Paris popüler bir gezi noktasıdır.'],
+    ['delay', 'gecikme', 'noun', '⏱️', 'There is a two-hour delay.', 'İki saatlik bir gecikme var.'],
+    ['sightseeing', 'gezip görme', 'noun', '📸', 'We went sightseeing in Rome.', "Roma'da turistik yerleri gezdik."],
+    ['accommodation', 'konaklama', 'noun', '🛏️', 'The price includes accommodation.', 'Fiyata konaklama dahil.'],
+    ['souvenir', 'hediyelik eşya', 'noun', '🗿', 'I bought a souvenir for my mum.', 'Annem için bir hediyelik eşya aldım.'],
+  ],
+  food: [
+    ['ingredient', 'malzeme (yemek)', 'noun', '🥕', 'What are the ingredients?', 'Malzemeler neler?'],
+  ],
+  nature: [
+    ['forecast', 'hava tahmini', 'noun', '📺', 'The forecast says it will rain.', 'Hava tahminine göre yağmur yağacak.'],
+    ['freezing', 'buz gibi, dondurucu', 'adjective', '🥶', "It's freezing outside!", 'Dışarısı buz gibi!'],
+    ['environment', 'çevre', 'noun', '🌍', 'We must protect the environment.', 'Çevreyi korumalıyız.'],
+    ['pollution', 'kirlilik', 'noun', '🏭', 'Air pollution is a big problem.', 'Hava kirliliği büyük bir sorun.'],
+    ['coast', 'sahil, kıyı', 'noun', '🏖️', 'They live on the coast.', 'Sahilde yaşıyorlar.'],
+    ['wildlife', 'yaban hayatı', 'noun', '🦊', 'The park is full of wildlife.', 'Park yaban hayatıyla dolu.'],
+  ],
+  verbs: [
+    ['complain', 'şikâyet etmek', 'verb', '😤', 'He always complains about the food.', 'Hep yemekten şikâyet ediyor.'],
+    ['suggest', 'önermek', 'verb', '💡', 'I suggest we take a taxi.', 'Taksiye binmemizi öneriyorum.'],
+    ['avoid', 'kaçınmak', 'verb', '🙅', 'Try to avoid sugar.', 'Şekerden kaçınmaya çalış.'],
+    ['manage', 'başarmak, becermek', 'verb', '🤹', 'Did you manage to finish it?', 'Bitirmeyi başarabildin mi?'],
+    ['afford', '(parası) yetmek', 'verb', '💳✅', "I can't afford a new car.", 'Yeni bir arabaya param yetmez.'],
+    ['pretend', '-mış gibi yapmak', 'verb', '🎭', 'He pretended to be asleep.', 'Uyuyormuş gibi yaptı.'],
+    ['realise', 'fark etmek', 'verb', '💡❗', 'I realised I was wrong.', 'Yanıldığımı fark ettim.'],
+    ['persuade', 'ikna etmek', 'verb', '🫱', 'She persuaded me to come.', 'Gelmem için beni ikna etti.'],
+    ['look forward to', 'dört gözle beklemek', 'phrasal verb', '🤩', "I'm looking forward to the holiday.", 'Tatili dört gözle bekliyorum.'],
+    ['find out', 'öğrenmek, ortaya çıkarmak', 'phrasal verb', '🔍', 'I found out the truth.', 'Gerçeği öğrendim.'],
+    ['turn down', 'reddetmek', 'phrasal verb', '👎', 'She turned down the job offer.', 'İş teklifini reddetti.'],
+    ['get on with', 'iyi geçinmek', 'phrasal verb', '🤗', 'I get on well with my brother.', 'Kardeşimle iyi geçinirim.'],
+  ],
+  adjectives: [
+    ['reliable', 'güvenilir', 'adjective', '⚓', 'He is a reliable friend.', 'O güvenilir bir arkadaş.'],
+    ['generous', 'cömert', 'adjective', '💝', "It's very generous of you.", 'Çok cömertsin.'],
+    ['similar', 'benzer', 'adjective', '👯', 'Our ideas are similar.', 'Fikirlerimiz benzer.'],
+    ['available', 'müsait, mevcut', 'adjective', '✅', 'Are you available on Monday?', 'Pazartesi müsait misin?'],
+  ],
+};

@@ -1,15 +1,22 @@
-import { TOPICS, WORDS, type TopicId } from '../data/words';
-import { dueCards, newWordsLeftToday, unseenWords, type SessionOptions } from '../lib/session';
+import { LEVELS, TOPICS, WORDS, type Level, type TopicId } from '../data/words';
+import { dueCards, newWordsLeftToday, nextLevel, unseenWords, type SessionOptions } from '../lib/session';
 import { isMastered } from '../lib/srs';
 import { dayKey, streak, type Progress } from '../lib/storage';
+import { EmojiArt } from './EmojiArt';
 
 interface Props {
   progress: Progress;
   now: number;
   onStart: (opts: SessionOptions) => void;
+  onChangeLevel: () => void;
+  onSetLevel: (level: Level) => void;
 }
 
-export function Home({ progress, now, onStart }: Props) {
+export function Home({ progress, now, onStart, onChangeLevel, onSetLevel }: Props) {
+  const level = progress.settings.level!;
+  const levelWords = WORDS.filter((w) => w.level === level);
+  const levelLeft = unseenWords(progress).length;
+  const upcoming = nextLevel(level);
   const due = dueCards(progress, now).length;
   const newLeft = Math.min(newWordsLeftToday(progress, now), unseenWords(progress).length);
   const cards = Object.values(progress.cards);
@@ -21,6 +28,19 @@ export function Home({ progress, now, onStart }: Props) {
 
   return (
     <div className="home">
+      <button className="level-banner" onClick={onChangeLevel}>
+        <span className={`level-code lvl-${level}`}>{level}</span>
+        <span className="level-text">
+          <b>{LEVELS[level].name}</b>
+          <span className="topic-bar">
+            <span style={{ width: `${((levelWords.length - levelLeft) / levelWords.length) * 100}%` }} />
+          </span>
+        </span>
+        <span className="muted small">
+          {levelWords.length - levelLeft}/{levelWords.length} · Değiştir ▾
+        </span>
+      </button>
+
       <div className="stats">
         <Stat value={`${days}🔥`} label="gün seri" />
         <Stat value={learned} label="öğrenilen" />
@@ -49,13 +69,22 @@ export function Home({ progress, now, onStart }: Props) {
               Başla ▶
             </button>
           </>
+        ) : levelLeft === 0 ? (
+          <>
+            <h2>{level} seviyesini tamamladın! 🏆</h2>
+            <p className="muted">Bu seviyedeki tüm kelimelerle tanıştın. Tekrarlar zamanı gelince karşına çıkmaya devam edecek.</p>
+            {upcoming && (
+              <button className="btn btn-primary btn-block" onClick={() => onSetLevel(upcoming)}>
+                {upcoming} seviyesine geç →
+              </button>
+            )}
+          </>
         ) : (
           <>
             <h2>Bugünlük bu kadar! 🎉</h2>
             <p className="muted">Tekrar zamanı gelen kelime yok. İstersen birkaç yeni kelime daha öğrenebilirsin.</p>
             <button
               className="btn btn-block"
-              disabled={unseenWords(progress).length === 0}
               onClick={() => onStart({ extraNew: 4 })}
             >
               +4 yeni kelime
@@ -67,9 +96,10 @@ export function Home({ progress, now, onStart }: Props) {
       <h3>Konular</h3>
       <div className="topics">
         {(Object.keys(TOPICS) as TopicId[]).map((id) => {
-          const total = WORDS.filter((w) => w.topic === id).length;
-          const seen = cards.filter((c) => c.wordId.startsWith(`${id}:`)).length;
+          const total = levelWords.filter((w) => w.topic === id).length;
+          if (total === 0) return null;
           const left = unseenWords(progress, id).length;
+          const seen = total - left;
           return (
             <button
               key={id}
@@ -78,7 +108,7 @@ export function Home({ progress, now, onStart }: Props) {
               onClick={() => onStart({ topic: id, extraNew: Math.min(4, left) })}
               title={left ? `${TOPICS[id].name}: 4 yeni kelime çalış` : 'Bu konudaki tüm kelimeleri öğrendin'}
             >
-              <span className="topic-emoji">{TOPICS[id].emoji}</span>
+              <EmojiArt emoji={TOPICS[id].emoji} className="topic-emoji" />
               <span className="topic-name">{TOPICS[id].name}</span>
               <span className="topic-bar">
                 <span style={{ width: `${(seen / total) * 100}%` }} />
@@ -99,7 +129,16 @@ export function Home({ progress, now, onStart }: Props) {
             yanlış bildiklerin hemen geri gelir. Böylece unutmak üzereyken hatırlarsın ve kelime kalıcı olur.
           </li>
           <li>
-            <b>Görsel çağrışım:</b> Her kelime bir görselle eşleşir. Beyin resimleri kelimelerden çok daha kolay hatırlar.
+            <b>Görsel çağrışım:</b> Her kelime bir görselle eşleşir; soyut kelimelerde birkaç görsel bir sahne anlatır (ör. <i>quit</i> =
+            işe el sallamak). Beyin resimleri kelimelerden çok daha kolay hatırlar.
+          </li>
+          <li>
+            <b>Renk kodu:</b> Görselin arka planı kelime türünü gösterir: <span className="pos-chip pos-noun">isim</span>{' '}
+            <span className="pos-chip pos-verb">fiil</span> <span className="pos-chip pos-adjective">sıfat</span>{' '}
+            <span className="pos-chip pos-phrasal-verb">deyimsel fiil</span> <span className="pos-chip pos-adverb">zarf</span>
+          </li>
+          <li>
+            <b>Kendi görselin:</b> Bir kelimeye kendi fotoğrafını ya da çizimini ekleyebilirsin. Kendi seçtiğin resim en güçlü bağı kurar.
           </li>
           <li>
             <b>Aktif hatırlama:</b> Sadece okumak yerine cevabı kendin bulursun; önce tanıma, sonra yazma ve dinleme.

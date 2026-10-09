@@ -1,4 +1,4 @@
-import { WORDS, WORDS_BY_ID, type TopicId, type Word } from '../data/words';
+import { LEVEL_ORDER, WORDS, WORDS_BY_ID, type Level, type TopicId, type Word } from '../data/words';
 import type { CardState } from './srs';
 import { dayKey, type Progress } from './storage';
 
@@ -40,12 +40,20 @@ export function retryMode(mode: QuizMode): QuizMode {
   return mode === 'type-tr-en' || mode === 'listen-type' ? 'choice-tr-en' : mode;
 }
 
-/** Çeldirici şıklar: mümkünse aynı türden (fiil/sıfat...) kelimeler seçilir ki tahminle bulunmasın. */
+const levelDistance = (a: Level, b: Level) => Math.abs(LEVEL_ORDER.indexOf(a) - LEVEL_ORDER.indexOf(b));
+
+/**
+ * Çeldirici şıklar: mümkünse aynı türden (fiil/sıfat...) ve yakın seviyeden kelimeler seçilir
+ * ki doğru cevap tahminle ya da eleme yoluyla bulunmasın.
+ */
 export function choicesFor(word: Word, rng: Rng = Math.random, count = 4): Word[] {
-  const others = WORDS.filter((w) => w.id !== word.id && w.tr !== word.tr && w.en !== word.en);
-  const samePos = shuffle(others.filter((w) => w.pos === word.pos), rng);
-  const rest = shuffle(others.filter((w) => w.pos !== word.pos), rng);
-  return shuffle([word, ...[...samePos, ...rest].slice(0, count - 1)], rng);
+  const others = shuffle(
+    WORDS.filter((w) => w.id !== word.id && w.tr !== word.tr && w.en !== word.en),
+    rng,
+  );
+  const score = (w: Word) => (w.pos === word.pos ? 0 : 2) + Math.min(levelDistance(w.level, word.level), 2);
+  const picked = others.sort((a, b) => score(a) - score(b)).slice(0, count - 1);
+  return shuffle([word, ...picked], rng);
 }
 
 export interface SessionOptions {
@@ -64,10 +72,13 @@ export function dueCards(p: Progress, now: number): CardState[] {
     .sort((a, b) => a.due - b.due);
 }
 
-export function unseenWords(p: Progress, topic?: TopicId): Word[] {
-  const words = WORDS.filter((w) => !p.cards[w.id] && (!topic || w.topic === topic));
-  // Önce A2, sonra B1 kelimeler.
-  return [...words.filter((w) => w.level === 'A2'), ...words.filter((w) => w.level === 'B1')];
+/** Seçili seviyede henüz çalışılmamış kelimeler. */
+export function unseenWords(p: Progress, topic?: TopicId, level: Level | null = p.settings.level): Word[] {
+  return WORDS.filter((w) => !p.cards[w.id] && (!topic || w.topic === topic) && (!level || w.level === level));
+}
+
+export function nextLevel(level: Level): Level | null {
+  return LEVEL_ORDER[LEVEL_ORDER.indexOf(level) + 1] ?? null;
 }
 
 const CHUNK = 4;

@@ -4,6 +4,7 @@ import type { TypedResult } from '../lib/answer';
 import { retryMode, type Step } from '../lib/session';
 import type { Progress } from '../lib/storage';
 import { LearnCard } from './LearnCard';
+import { EmojiArt } from './EmojiArt';
 import { Quiz } from './Quiz';
 
 interface Props {
@@ -98,9 +99,7 @@ function Summary({ results, onExit }: { results: { wordId: string; result: Typed
   const pct = results.length ? Math.round((correct / results.length) * 100) : 0;
   return (
     <div className="card center">
-      <div className="emoji-visual" aria-hidden>
-        {pct >= 80 ? '🎉' : pct >= 50 ? '💪' : '🌱'}
-      </div>
+      <EmojiArt emoji={pct >= 80 ? '🎉' : pct >= 50 ? '💪' : '🌱'} className="summary-emoji" />
       <h2>Oturum tamamlandı!</h2>
       {results.length > 0 && (
         <p className="big-stat">
@@ -113,7 +112,7 @@ function Summary({ results, onExit }: { results: { wordId: string; result: Typed
           <div className="chips">
             {missed.map((id) => (
               <span key={id} className="chip">
-                {WORDS_BY_ID[id].emoji} {WORDS_BY_ID[id].en} — {WORDS_BY_ID[id].tr}
+                <EmojiArt emoji={WORDS_BY_ID[id].emoji} className="chip-emoji" /> {WORDS_BY_ID[id].en} — {WORDS_BY_ID[id].tr}
               </span>
             ))}
           </div>

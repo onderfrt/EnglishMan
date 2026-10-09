@@ -1,19 +1,19 @@
 import { POS_TR, type Word } from '../data/words';
 import { SpeakButton } from './Speak';
+import { WordVisual } from './WordVisual';
 
 /** Kelimeyi görsel, telaffuz ve örnek cümle ile birlikte gösteren kart. */
-export function WordDetails({ word, note }: { word: Word; note?: string }) {
+export function WordDetails({ word, note, editable }: { word: Word; note?: string; editable?: boolean }) {
   return (
     <div className="word-details">
-      <div className="emoji-visual" aria-hidden>
-        {word.emoji}
-      </div>
+      <WordVisual word={word} editable={editable} />
       <div className="word-line">
         <span className="word-en">{word.en}</span>
         <SpeakButton text={word.en} />
         <SpeakButton text={word.en} rate={0.5} label="Yavaş dinle" icon="🐢" />
       </div>
       <div className="word-meta">
+        <span className={`pos-dot pos-${word.pos.replace(' ', '-')}`} />
         {POS_TR[word.pos]} · {word.level}
       </div>
       <div className="word-tr">{word.tr}</div>

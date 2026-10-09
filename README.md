@@ -1,14 +1,22 @@
 # EnglishMan 🇬🇧
 
 İngilizceyi öğrenirken birlikte geliştirdiğimiz, kendi kendine test edilen bir öğrenme uygulaması.
-İlk modül: **kelime öğrenimi** (A2–B1 / pre-intermediate seviye).
+İlk modül: **kelime öğrenimi**. A1'den C2'ye 6 seviye, 272 kelime.
+
+## Seviyeler
+
+İlk açılışta seviyeni seçersin ya da 2 dakikalık seviye testini yaparsın. Testte her seviyeden 5 kelime sorulur,
+4 ve üzeri doğru yaparsan bir üst seviyeye geçersin. Yeni kelimeler seçtiğin seviyeden gelir. Bir seviye bitince
+uygulama seni bir sonraki seviyeye davet eder. Seviyeyi ana sayfadaki seviye kartından ya da Ayarlar'dan değiştirebilirsin.
 
 ## Hangi öğrenme teknikleri kullanılıyor?
 
 | Teknik | Uygulamada nasıl? |
 | --- | --- |
 | **Aralıklı tekrar (Spaced Repetition)** | SM-2 tabanlı algoritma. Doğru bildiğin kelime 1 gün → 3 gün → ~1 hafta → ~3 hafta… sonra tekrar sorulur. Yanlış bildiğin 10 dakika sonra geri gelir. |
-| **Görsel çağrışım** | Her kelime bir görselle (emoji) eşleşir. (Wordjin'deki gibi resimle hatırlama.) |
+| **Görsel çağrışım** | Her kelime her cihazda aynı görünen 3D bir görselle eşleşir. Soyut kelimelerde birkaç görsel bir sahne anlatır (ör. *quit* = 👋💼, işe el sallamak). |
+| **Renk kodu** | Görselin arka plan rengi kelime türünü gösterir: isim mavi, fiil yeşil, sıfat turuncu, deyimsel fiil pembe. |
+| **Kendi görselin** | Bir kelimeye kendi fotoğrafını ya da çizimini ekleyebilirsin; kendi seçtiğin resim en güçlü bağı kurar. |
 | **Aktif hatırlama (Active Recall)** | Kelimeyi sadece okumazsın, cevabı kendin bulursun. |
 | **Kademeli zorluk** | Önce tanıma (İng → Tr seç), sonra hatırlama (Tr → İng seç / dinleyip seç), en son üretme (İngilizcesini yaz / duyduğunu yaz). |
 | **Bağlam** | Her kelime bir örnek cümle ve Türkçe çevirisiyle gelir; kelime cümlede vurgulanır. |
@@ -35,22 +43,31 @@ Telefonda açıp tarayıcı menüsünden **"Ana ekrana ekle"** dersen uygulama g
 
 ```
 src/
-  data/words.ts        Kelime listesi (konu, emoji, örnek cümle, seviye)
+  data/a1.ts … c2.ts   Seviyelere göre kelime listeleri (konu, emoji, örnek cümle)
+  data/words.ts        Seviyeler, konular ve tüm kelimelerin birleştirilmesi
   lib/srs.ts           Aralıklı tekrar algoritması
   lib/session.ts       Günlük oturumun oluşturulması, soru tipleri, çeldirici şıklar
   lib/answer.ts        Yazılan cevabın kontrolü (yazım hatası toleransı, İng/Amerikan yazımı)
   lib/storage.ts       İlerlemenin kaydı, günlük seri
   lib/speech.ts        Sesli okuma (tarayıcının Text-to-Speech'i)
+  lib/images.ts        Kullanıcının kelimelere eklediği kendi görselleri
+emoji-assets.ts        Derlemede kullanılan 3D emoji görsellerini public/emoji/ altına kopyalar
   components/          Ekranlar: Ana sayfa, oturum, kelime listesi, ayarlar
 ```
 
-Yeni kelime eklemek için `src/data/words.ts` içindeki ilgili konuya bir satır eklemen yeterli.
+Yeni kelime eklemek için ilgili seviye dosyasına (ör. `src/data/b1.ts`) bir satır eklemen yeterli.
+`npm test`, kullanılan her emojinin 3D görselinin bulunduğunu kontrol eder.
+
+Görseller: [Microsoft Fluent Emoji 3D](https://github.com/microsoft/fluentui-emoji) (MIT lisansı),
+[@lobehub/fluent-emoji-3d](https://www.npmjs.com/package/@lobehub/fluent-emoji-3d) paketi üzerinden.
 
 ## Yol haritası
 
 - [x] Kelime modülü: aralıklı tekrar, görsel, ses, 5 soru tipi, ilerleme takibi
-- [ ] Kelime listesini büyütmek (Oxford 3000'den A2–B1 kelimeler) ve kendi kelimeni ekleyebilme
-- [ ] Gerçek görseller / yapay zekâ ile üretilmiş çağrışım resimleri
+- [x] A1–C2 seviye seçimi ve seviye testi
+- [x] 3D görseller, görsel sahneler, tür renk kodu, kendi görselini ekleme
+- [ ] Kelime listesini büyütmek (Oxford 3000/5000) ve kendi kelimeni ekleyebilme
+- [ ] Yapay zekâ ile üretilmiş, kelimeye özel çağrışım resimleri
 - [ ] Cümle tamamlama (boşluk doldurma) soruları
 - [ ] **Reading:** seviyeye uygun kısa metinler, bilinmeyen kelimeye dokununca anlam + listeye ekleme
 - [ ] **Listening:** kısa diyaloglar, dikte alıştırmaları

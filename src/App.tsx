@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Home } from './components/Home';
+import { LevelPicker } from './components/LevelPicker';
 import { SessionView } from './components/SessionView';
 import { SettingsView } from './components/SettingsView';
 import { WordList } from './components/WordList';
+import type { Level } from './data/words';
 import type { TypedResult } from './lib/answer';
 import { buildSession, type SessionOptions, type Step } from './lib/session';
 import { newCard, review, type Grade } from './lib/srs';
@@ -17,6 +19,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('home');
   const [session, setSession] = useState<Step[] | null>(null);
   const [now, setNow] = useState(Date.now());
+  const [pickingLevel, setPickingLevel] = useState(false);
 
   useEffect(() => saveProgress(progress), [progress]);
 
@@ -61,6 +64,29 @@ export default function App() {
       return { ...p, notes };
     });
 
+  const setLevel = (level: Level) => {
+    setProgress((p) => ({ ...p, settings: { ...p.settings, level } }));
+    setPickingLevel(false);
+    setTab('home');
+  };
+
+  if (!progress.settings.level || pickingLevel) {
+    return (
+      <main className="app">
+        <header className="app-header">
+          <h1>
+            English<span>Man</span>
+          </h1>
+        </header>
+        <LevelPicker
+          progress={progress}
+          onSelect={setLevel}
+          onCancel={progress.settings.level ? () => setPickingLevel(false) : undefined}
+        />
+      </main>
+    );
+  }
+
   if (session) {
     return (
       <main className="app">
@@ -85,9 +111,13 @@ export default function App() {
           English<span>Man</span>
         </h1>
       </header>
-      {tab === 'home' && <Home progress={progress} now={now} onStart={start} />}
+      {tab === 'home' && (
+        <Home progress={progress} now={now} onStart={start} onChangeLevel={() => setPickingLevel(true)} onSetLevel={setLevel} />
+      )}
       {tab === 'words' && <WordList progress={progress} now={now} />}
-      {tab === 'settings' && <SettingsView progress={progress} onChange={setProgress} />}
+      {tab === 'settings' && (
+        <SettingsView progress={progress} onChange={setProgress} onChangeLevel={() => setPickingLevel(true)} />
+      )}
       <nav className="tabbar">
         {(
           [
