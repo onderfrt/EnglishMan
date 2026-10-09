@@ -7,6 +7,8 @@ export interface Settings {
   newPerDay: number;
   maxReviewsPerSession: number;
   autoSpeak: boolean;
+  /** Seçilen İngilizce ses (null: otomatik). */
+  voiceURI: string | null;
 }
 
 export interface DayLog {
@@ -28,7 +30,7 @@ export interface Progress {
 
 const KEY = 'englishman:progress:v1';
 
-export const DEFAULT_SETTINGS: Settings = { level: null, newPerDay: 10, maxReviewsPerSession: 40, autoSpeak: true };
+export const DEFAULT_SETTINGS: Settings = { level: null, newPerDay: 10, maxReviewsPerSession: 40, autoSpeak: true, voiceURI: null };
 
 export function emptyProgress(): Progress {
   return { version: 1, cards: {}, notes: {}, settings: { ...DEFAULT_SETTINGS }, days: {} };

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { type Word } from '../data/words';
 import { checkTyped, type TypedResult } from '../lib/answer';
 import { choicesFor, type QuizMode } from '../lib/session';
-import { speak } from '../lib/speech';
+import { SLOW_RATE, speak } from '../lib/speech';
 import { SpeakButton } from './Speak';
 import { WordDetails } from './WordDetails';
 import { WordVisual } from './WordVisual';
@@ -110,7 +110,7 @@ export function Quiz({ word, mode, note, autoSpeak, onAnswer, onNext }: Props) {
             </button>
           )}
           {isListen && (
-            <button className="link-btn" onClick={() => speak(word.en, 0.5)}>
+            <button className="link-btn" onClick={() => speak(word.en, SLOW_RATE)}>
               🐢 Yavaş dinle
             </button>
           )}

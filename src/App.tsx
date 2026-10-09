@@ -7,6 +7,7 @@ import { WordList } from './components/WordList';
 import type { Level } from './data/words';
 import type { TypedResult } from './lib/answer';
 import { buildSession, type SessionOptions, type Step } from './lib/session';
+import { setPreferredVoice } from './lib/speech';
 import { newCard, review, type Grade } from './lib/srs';
 import { dayKey, loadProgress, saveProgress, type Progress } from './lib/storage';
 
@@ -22,6 +23,7 @@ export default function App() {
   const [pickingLevel, setPickingLevel] = useState(false);
 
   useEffect(() => saveProgress(progress), [progress]);
+  useEffect(() => setPreferredVoice(progress.settings.voiceURI), [progress.settings.voiceURI]);
 
   // Sayfa açık kalırsa "tekrar zamanı gelen" sayısı güncel kalsın.
   useEffect(() => {

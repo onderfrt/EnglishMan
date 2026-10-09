@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LEVELS } from '../data/words';
-import { canSpeak, speak } from '../lib/speech';
+import { canSpeak, englishVoices, onVoicesChanged, SLOW_RATE, speak } from '../lib/speech';
 import { emptyProgress, parseProgress, type Progress, type Settings } from '../lib/storage';
 
 interface Props {
@@ -12,6 +12,8 @@ interface Props {
 export function SettingsView({ progress, onChange, onChangeLevel }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
+  const [voices, setVoices] = useState(englishVoices);
+  useEffect(() => onVoicesChanged(() => setVoices(englishVoices())), []);
   const s = progress.settings;
   const set = (patch: Partial<Settings>) => onChange({ ...progress, settings: { ...s, ...patch } });
 
@@ -69,9 +71,30 @@ export function SettingsView({ progress, onChange, onChangeLevel }: Props) {
           <span>Kelimeleri otomatik seslendir</span>
         </label>
         {canSpeak() ? (
-          <button className="btn" onClick={() => speak('Hello! This is how words will sound.')}>
-            🔊 Sesi test et
-          </button>
+          <div className="setting">
+            <label>
+              <span>Ses</span>
+              <select value={s.voiceURI ?? ''} onChange={(e) => set({ voiceURI: e.target.value || null })}>
+                <option value="">Otomatik</option>
+                {voices.map((v) => (
+                  <option key={v.voiceURI} value={v.voiceURI}>
+                    {v.name} ({v.lang}){v.localService ? '' : ' · internet'}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="row">
+              <button className="btn" onClick={() => speak('Hello! This is how words will sound.')}>
+                🔊 Normal dene
+              </button>
+              <button className="btn" onClick={() => speak('Hello! This is how words will sound.', SLOW_RATE)}>
+                🐢 Yavaş dene
+              </button>
+            </div>
+            <small className="muted">
+              Yavaş okuma hızlanmıyorsa farklı bir ses seç. “internet” yazan sesler bazı telefonlarda hız ayarını desteklemez.
+            </small>
+          </div>
         ) : (
           <p className="muted small">Bu tarayıcı sesli okumayı desteklemiyor; dinleme soruları çalışmayabilir.</p>
         )}

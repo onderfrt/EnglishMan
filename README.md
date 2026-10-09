@@ -63,6 +63,8 @@ Görseller: [Microsoft Fluent Emoji 3D](https://github.com/microsoft/fluentui-em
 
 ## Yol haritası
 
+Gelir modeli ve ürünleştirme planı: [docs/is-plani.md](docs/is-plani.md)
+
 - [x] Kelime modülü: aralıklı tekrar, görsel, ses, 5 soru tipi, ilerleme takibi
 - [x] A1–C2 seviye seçimi ve seviye testi
 - [x] 3D görseller, görsel sahneler, tür renk kodu, kendi görselini ekleme

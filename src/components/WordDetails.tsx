@@ -1,4 +1,5 @@
 import { POS_TR, type Word } from '../data/words';
+import { SLOW_RATE } from '../lib/speech';
 import { SpeakButton } from './Speak';
 import { WordVisual } from './WordVisual';
 
@@ -10,7 +11,7 @@ export function WordDetails({ word, note, editable }: { word: Word; note?: strin
       <div className="word-line">
         <span className="word-en">{word.en}</span>
         <SpeakButton text={word.en} />
-        <SpeakButton text={word.en} rate={0.5} label="Yavaş dinle" icon="🐢" />
+        <SpeakButton text={word.en} rate={SLOW_RATE} label="Yavaş dinle" icon="🐢" />
       </div>
       <div className="word-meta">
         <span className={`pos-dot pos-${word.pos.replace(' ', '-')}`} />
