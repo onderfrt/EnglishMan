@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { LEVELS } from '../data/words';
+import { GOALS, LEVELS } from '../data/words';
 import { canSpeak, englishVoices, onVoicesChanged, SLOW_RATE, speak } from '../lib/speech';
 import { emptyProgress, parseProgress, type Progress, type Settings } from '../lib/storage';
 
 interface Props {
   progress: Progress;
   onChange: (p: Progress) => void;
+  onChangeGoal: () => void;
   onChangeLevel: () => void;
 }
 
-export function SettingsView({ progress, onChange, onChangeLevel }: Props) {
+export function SettingsView({ progress, onChange, onChangeGoal, onChangeLevel }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
   const [voices, setVoices] = useState(englishVoices);
@@ -40,12 +41,32 @@ export function SettingsView({ progress, onChange, onChangeLevel }: Props) {
       <div className="card">
         <div className="setting setting-inline">
           <span>
-            Seviye: <b>{s.level}</b> — {s.level && LEVELS[s.level].name}
+            Hedef: <b>{s.goal && GOALS[s.goal].name}</b>
           </span>
-          <button className="btn" onClick={onChangeLevel}>
+          <button className="btn" onClick={onChangeGoal}>
             Değiştir
           </button>
         </div>
+        {s.goal && GOALS[s.goal].pack ? (
+          <label className="setting">
+            <span>Sınav tarihi</span>
+            <input
+              type="date"
+              className="search"
+              value={s.examDate ?? ''}
+              onChange={(e) => set({ examDate: e.target.value || null })}
+            />
+          </label>
+        ) : (
+          <div className="setting setting-inline">
+            <span>
+              Seviye: <b>{s.level}</b> — {s.level && LEVELS[s.level].name}
+            </span>
+            <button className="btn" onClick={onChangeLevel}>
+              Değiştir
+            </button>
+          </div>
+        )}
         <label className="setting">
           <span>
             Günlük yeni kelime: <b>{s.newPerDay}</b>

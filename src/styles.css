@@ -20,6 +20,8 @@
   --pos-adjective: #ffedd5;
   --pos-adverb: #ede9fe;
   --pos-phrasal: #fce7f3;
+  --pos-conjunction: #fef9c3;
+  --pos-preposition: #ccfbf1;
   color-scheme: light dark;
 }
 
@@ -44,6 +46,8 @@
     --pos-adjective: #4a3015;
     --pos-adverb: #33285a;
     --pos-phrasal: #4a1f3a;
+    --pos-conjunction: #423c12;
+    --pos-preposition: #123f3a;
   }
 }
 
@@ -809,4 +813,40 @@ select {
 .option-skip {
   color: var(--muted);
   justify-content: center;
+}
+.pos-conjunction {
+  background: var(--pos-conjunction);
+}
+.pos-preposition {
+  background: var(--pos-preposition);
+}
+.synonyms {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.synonyms .chip {
+  cursor: pointer;
+  color: inherit;
+}
+.goal-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--primary-soft);
+  font-size: 30px;
+  flex-shrink: 0;
+}
+.notice {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin: -4px 0 12px;
 }

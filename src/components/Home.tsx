@@ -1,22 +1,28 @@
-import { LEVELS, TOPICS, WORDS, type Level, type TopicId } from '../data/words';
-import { dueCards, newWordsLeftToday, nextLevel, unseenWords, type SessionOptions } from '../lib/session';
+import { GOALS, LEVELS, PACKS, TOPICS, type Level, type TopicId } from '../data/words';
+import { dueCards, newWordsLeftToday, nextLevel, sourceWords, unseenWords, type SessionOptions } from '../lib/session';
 import { isMastered } from '../lib/srs';
-import { dayKey, streak, type Progress } from '../lib/storage';
+import { dayKey, daysUntil, streak, type Progress } from '../lib/storage';
 import { EmojiArt } from './EmojiArt';
 
 interface Props {
   progress: Progress;
   now: number;
   onStart: (opts: SessionOptions) => void;
+  onChangeGoal: () => void;
   onChangeLevel: () => void;
   onSetLevel: (level: Level) => void;
 }
 
-export function Home({ progress, now, onStart, onChangeLevel, onSetLevel }: Props) {
-  const level = progress.settings.level!;
-  const levelWords = WORDS.filter((w) => w.level === level);
-  const levelLeft = unseenWords(progress).length;
-  const upcoming = nextLevel(level);
+export function Home({ progress, now, onStart, onChangeGoal, onChangeLevel, onSetLevel }: Props) {
+  const { goal, level, examDate, newPerDay } = progress.settings;
+  const pack = goal ? GOALS[goal].pack : null;
+  const sourceList = sourceWords(progress);
+  const sourceLeft = unseenWords(progress).length;
+  const sourceDone = sourceList.length - sourceLeft;
+  const upcoming = !pack && level ? nextLevel(level) : null;
+  const examDays = pack ? daysUntil(examDate, now) : null;
+  // Paketi sınava kadar bitirmek için günde kaç yeni kelime gerekir?
+  const perDayNeeded = examDays ? Math.ceil(sourceLeft / examDays) : null;
   const due = dueCards(progress, now).length;
   const newLeft = Math.min(newWordsLeftToday(progress, now), unseenWords(progress).length);
   const cards = Object.values(progress.cards);
@@ -28,18 +34,50 @@ export function Home({ progress, now, onStart, onChangeLevel, onSetLevel }: Prop
 
   return (
     <div className="home">
-      <button className="level-banner" onClick={onChangeLevel}>
-        <span className={`level-code lvl-${level}`}>{level}</span>
-        <span className="level-text">
-          <b>{LEVELS[level].name}</b>
-          <span className="topic-bar">
-            <span style={{ width: `${((levelWords.length - levelLeft) / levelWords.length) * 100}%` }} />
+      {pack && goal ? (
+        <button className="level-banner" onClick={onChangeGoal}>
+          <span className="goal-icon">
+            <EmojiArt emoji={GOALS[goal].emoji} />
           </span>
-        </span>
-        <span className="muted small">
-          {levelWords.length - levelLeft}/{levelWords.length} · Değiştir ▾
-        </span>
-      </button>
+          <span className="level-text">
+            <b>
+              {GOALS[goal].name} · {PACKS[pack].name}
+            </b>
+            <span className="topic-bar">
+              <span style={{ width: `${(sourceDone / sourceList.length) * 100}%` }} />
+            </span>
+            {examDays !== null && (
+              <span className="small">
+                {examDays === 0 ? '🎯 Sınav bugün, başarılar!' : `⏳ Sınava ${examDays} gün`}
+                {perDayNeeded ? ` · paketi bitirmek için günde ~${perDayNeeded} yeni kelime` : ''}
+              </span>
+            )}
+          </span>
+          <span className="muted small">
+            {sourceDone}/{sourceList.length} · Değiştir ▾
+          </span>
+        </button>
+      ) : (
+        level && (
+          <button className="level-banner" onClick={onChangeLevel}>
+            <span className={`level-code lvl-${level}`}>{level}</span>
+            <span className="level-text">
+              <b>{LEVELS[level].name}</b>
+              <span className="topic-bar">
+                <span style={{ width: `${(sourceDone / sourceList.length) * 100}%` }} />
+              </span>
+            </span>
+            <span className="muted small">
+              {sourceDone}/{sourceList.length} · Değiştir ▾
+            </span>
+          </button>
+        )
+      )}
+      {perDayNeeded !== null && perDayNeeded > newPerDay && (
+        <p className="notice small">
+          Günlük yeni kelime ayarın ({newPerDay}) sınava kadar paketi bitirmeye yetmiyor. Ayarlar'dan artırabilirsin.
+        </p>
+      )}
 
       <div className="stats">
         <Stat value={`${days}🔥`} label="gün seri" />
@@ -69,10 +107,10 @@ export function Home({ progress, now, onStart, onChangeLevel, onSetLevel }: Prop
               Başla ▶
             </button>
           </>
-        ) : levelLeft === 0 ? (
+        ) : sourceLeft === 0 ? (
           <>
-            <h2>{level} seviyesini tamamladın! 🏆</h2>
-            <p className="muted">Bu seviyedeki tüm kelimelerle tanıştın. Tekrarlar zamanı gelince karşına çıkmaya devam edecek.</p>
+            <h2>{pack ? `${PACKS[pack].name} tamamlandı!` : `${level} seviyesini tamamladın!`} 🏆</h2>
+            <p className="muted">Buradaki tüm kelimelerle tanıştın. Tekrarlar zamanı gelince karşına çıkmaya devam edecek.</p>
             {upcoming && (
               <button className="btn btn-primary btn-block" onClick={() => onSetLevel(upcoming)}>
                 {upcoming} seviyesine geç →
@@ -96,7 +134,7 @@ export function Home({ progress, now, onStart, onChangeLevel, onSetLevel }: Prop
       <h3>Konular</h3>
       <div className="topics">
         {(Object.keys(TOPICS) as TopicId[]).map((id) => {
-          const total = levelWords.filter((w) => w.topic === id).length;
+          const total = sourceList.filter((w) => w.topic === id).length;
           if (total === 0) return null;
           const left = unseenWords(progress, id).length;
           const seen = total - left;
@@ -135,7 +173,12 @@ export function Home({ progress, now, onStart, onChangeLevel, onSetLevel }: Prop
           <li>
             <b>Renk kodu:</b> Görselin arka planı kelime türünü gösterir: <span className="pos-chip pos-noun">isim</span>{' '}
             <span className="pos-chip pos-verb">fiil</span> <span className="pos-chip pos-adjective">sıfat</span>{' '}
-            <span className="pos-chip pos-phrasal-verb">deyimsel fiil</span> <span className="pos-chip pos-adverb">zarf</span>
+            <span className="pos-chip pos-phrasal-verb">deyimsel fiil</span> <span className="pos-chip pos-adverb">zarf</span>{' '}
+            <span className="pos-chip pos-conjunction">bağlaç</span> <span className="pos-chip pos-preposition">edat</span>
+          </li>
+          <li>
+            <b>Eş anlamlılar:</b> Akademik kelimelerin eş anlamlılarını da öğrenirsin. YDS ve YÖKDİL'de aynı anlam çoğu zaman
+            başka kelimelerle verilir; eş anlamlıları bilmek okuma ve çeviri sorularında büyük avantaj sağlar.
           </li>
           <li>
             <b>Kendi görselin:</b> Bir kelimeye kendi fotoğrafını ya da çizimini ekleyebilirsin. Kendi seçtiğin resim en güçlü bağı kurar.

@@ -1,8 +1,12 @@
-import type { Level } from '../data/words';
+import type { Goal, Level } from '../data/words';
 import type { CardState } from './srs';
 
 export interface Settings {
-  /** Yeni kelimelerin seçildiği seviye. null: henüz seçilmedi (seviye seçim ekranı gösterilir). */
+  /** Öğrenme hedefi. null: henüz seçilmedi (hedef seçim ekranı gösterilir). */
+  goal: Goal | null;
+  /** Sınav tarihi (YYYY-MM-DD), sınav hedeflerinde isteğe bağlı. */
+  examDate: string | null;
+  /** Genel İngilizce'de yeni kelimelerin seçildiği seviye. null: henüz seçilmedi (seviye seçim ekranı gösterilir). */
   level: Level | null;
   newPerDay: number;
   maxReviewsPerSession: number;
@@ -30,7 +34,15 @@ export interface Progress {
 
 const KEY = 'englishman:progress:v1';
 
-export const DEFAULT_SETTINGS: Settings = { level: null, newPerDay: 10, maxReviewsPerSession: 40, autoSpeak: true, voiceURI: null };
+export const DEFAULT_SETTINGS: Settings = {
+  goal: null,
+  examDate: null,
+  level: null,
+  newPerDay: 10,
+  maxReviewsPerSession: 40,
+  autoSpeak: true,
+  voiceURI: null,
+};
 
 export function emptyProgress(): Progress {
   return { version: 1, cards: {}, notes: {}, settings: { ...DEFAULT_SETTINGS }, days: {} };
@@ -68,6 +80,16 @@ export function dayKey(time: number): string {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${d.getFullYear()}-${m}-${day}`;
+}
+
+/** Sınava kalan gün sayısı (bugün sınav günüyse 0). Tarih yoksa ya da geçtiyse null. */
+export function daysUntil(date: string | null, now: number): number | null {
+  if (!date) return null;
+  const [y, m, d] = date.split('-').map(Number);
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const days = Math.round((new Date(y, m - 1, d).getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+  return days >= 0 ? days : null;
 }
 
 /** Bugün (ya da henüz bugün çalışılmadıysa dünden geriye) üst üste çalışılan gün sayısı. */

@@ -1,11 +1,16 @@
 # EnglishMan 🇬🇧
 
 İngilizceyi öğrenirken birlikte geliştirdiğimiz, kendi kendine test edilen bir öğrenme uygulaması.
-İlk modül: **kelime öğrenimi**. A1'den C2'ye 6 seviye, 272 kelime.
+İlk modül: **kelime öğrenimi**. 417 kelime: A1'den C2'ye 6 seviye ve sınavlar için **Akademik Çekirdek** paketi.
 
-## Seviyeler
+## Hedefler ve seviyeler
 
-İlk açılışta seviyeni seçersin ya da 2 dakikalık seviye testini yaparsın. Testte her seviyeden 5 kelime sorulur,
+İlk açılışta hedefini seçersin: **YDS**, **YÖKDİL**, **IELTS** ya da **Genel İngilizce**.
+
+- **Sınav hedefleri:** Yeni kelimeler Akademik Çekirdek paketinden (190 kelime, B1→C2 sırasıyla) gelir. Her kelimenin
+  eş anlamlıları da gösterilir. *although, whereas, despite* gibi bağlaçlar ve edatlar da pakete dahildir.
+  Sınav tarihini girersen ana sayfada kalan gün ve paketi bitirmek için günde kaç yeni kelime gerektiği görünür.
+- **Genel İngilizce:** Seviyeni seçersin ya da 2 dakikalık seviye testini yaparsın. Testte her seviyeden 5 kelime sorulur,
 4 ve üzeri doğru yaparsan bir üst seviyeye geçersin. Yeni kelimeler seçtiğin seviyeden gelir. Bir seviye bitince
 uygulama seni bir sonraki seviyeye davet eder. Seviyeyi ana sayfadaki seviye kartından ya da Ayarlar'dan değiştirebilirsin.
 
@@ -44,7 +49,8 @@ Telefonda açıp tarayıcı menüsünden **"Ana ekrana ekle"** dersen uygulama g
 ```
 src/
   data/a1.ts … c2.ts   Seviyelere göre kelime listeleri (konu, emoji, örnek cümle)
-  data/words.ts        Seviyeler, konular ve tüm kelimelerin birleştirilmesi
+  data/academic.ts     Akademik Çekirdek kelimeleri ve eş anlamlılar
+  data/words.ts        Seviyeler, konular, hedefler, paketler ve tüm kelimelerin birleştirilmesi
   lib/srs.ts           Aralıklı tekrar algoritması
   lib/session.ts       Günlük oturumun oluşturulması, soru tipleri, çeldirici şıklar
   lib/answer.ts        Yazılan cevabın kontrolü (yazım hatası toleransı, İng/Amerikan yazımı)
@@ -67,6 +73,7 @@ Gelir modeli ve ürünleştirme planı: [docs/is-plani.md](docs/is-plani.md)
 
 - [x] Kelime modülü: aralıklı tekrar, görsel, ses, 5 soru tipi, ilerleme takibi
 - [x] A1–C2 seviye seçimi ve seviye testi
+- [x] Hedef seçimi (YDS / YÖKDİL / IELTS), sınav tarihi, Akademik Çekirdek paketi ve eş anlamlılar
 - [x] 3D görseller, görsel sahneler, tür renk kodu, kendi görselini ekleme
 - [ ] Kelime listesini büyütmek (Oxford 3000/5000) ve kendi kelimeni ekleyebilme
 - [ ] Yapay zekâ ile üretilmiş, kelimeye özel çağrışım resimleri

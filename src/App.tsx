@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Home } from './components/Home';
+import { GoalPicker } from './components/GoalPicker';
 import { LevelPicker } from './components/LevelPicker';
 import { SessionView } from './components/SessionView';
 import { SettingsView } from './components/SettingsView';
 import { WordList } from './components/WordList';
-import type { Level } from './data/words';
+import type { Goal, Level } from './data/words';
 import type { TypedResult } from './lib/answer';
 import { buildSession, type SessionOptions, type Step } from './lib/session';
 import { setPreferredVoice } from './lib/speech';
@@ -20,7 +21,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('home');
   const [session, setSession] = useState<Step[] | null>(null);
   const [now, setNow] = useState(Date.now());
-  const [pickingLevel, setPickingLevel] = useState(false);
+  const [picking, setPicking] = useState<'goal' | 'level' | null>(null);
 
   useEffect(() => saveProgress(progress), [progress]);
   useEffect(() => setPreferredVoice(progress.settings.voiceURI), [progress.settings.voiceURI]);
@@ -68,22 +69,48 @@ export default function App() {
 
   const setLevel = (level: Level) => {
     setProgress((p) => ({ ...p, settings: { ...p.settings, level } }));
-    setPickingLevel(false);
+    setPicking(null);
     setTab('home');
   };
 
-  if (!progress.settings.level || pickingLevel) {
+  const setGoal = (goal: Goal | null, examDate: string | null = null) => {
+    setProgress((p) => ({ ...p, settings: { ...p.settings, goal, examDate } }));
+    setPicking(null);
+    setTab('home');
+  };
+
+  const { goal, level, examDate } = progress.settings;
+  const header = (
+    <header className="app-header">
+      <h1>
+        English<span>Man</span>
+      </h1>
+    </header>
+  );
+
+  // İlk açılış: önce hedef, Genel İngilizce seçildiyse ardından seviye.
+  if (!goal || picking === 'goal') {
     return (
       <main className="app">
-        <header className="app-header">
-          <h1>
-            English<span>Man</span>
-          </h1>
-        </header>
+        {header}
+        <GoalPicker
+          current={goal}
+          examDate={examDate}
+          onSelect={setGoal}
+          onCancel={goal ? () => setPicking(null) : undefined}
+        />
+      </main>
+    );
+  }
+
+  if ((goal === 'general' && !level) || picking === 'level') {
+    return (
+      <main className="app">
+        {header}
         <LevelPicker
           progress={progress}
           onSelect={setLevel}
-          onCancel={progress.settings.level ? () => setPickingLevel(false) : undefined}
+          onCancel={level ? () => setPicking(null) : () => setGoal(null)}
         />
       </main>
     );
@@ -108,17 +135,25 @@ export default function App() {
 
   return (
     <main className="app">
-      <header className="app-header">
-        <h1>
-          English<span>Man</span>
-        </h1>
-      </header>
+      {header}
       {tab === 'home' && (
-        <Home progress={progress} now={now} onStart={start} onChangeLevel={() => setPickingLevel(true)} onSetLevel={setLevel} />
+        <Home
+          progress={progress}
+          now={now}
+          onStart={start}
+          onChangeGoal={() => setPicking('goal')}
+          onChangeLevel={() => setPicking('level')}
+          onSetLevel={setLevel}
+        />
       )}
       {tab === 'words' && <WordList progress={progress} now={now} />}
       {tab === 'settings' && (
-        <SettingsView progress={progress} onChange={setProgress} onChangeLevel={() => setPickingLevel(true)} />
+        <SettingsView
+          progress={progress}
+          onChange={setProgress}
+          onChangeGoal={() => setPicking('goal')}
+          onChangeLevel={() => setPicking('level')}
+        />
       )}
       <nav className="tabbar">
         {(

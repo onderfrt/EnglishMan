@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Plugin } from 'vite';
-import { TOPICS, WORDS } from './src/data/words.ts';
+import { GOALS, TOPICS, WORDS } from './src/data/words.ts';
 import { emojiCode, graphemes } from './src/lib/emoji.ts';
 
 /**
@@ -12,7 +12,7 @@ const SOURCE = path.resolve('node_modules/@lobehub/fluent-emoji-3d/assets');
 const TARGET = path.resolve('public/emoji');
 
 export function usedEmojiCodes(): Set<string> {
-  const all = [...WORDS.map((w) => w.emoji), ...Object.values(TOPICS).map((t) => t.emoji), '🎉', '💪', '🌱', '🎯'];
+  const all = [...WORDS.map((w) => w.emoji), ...Object.values(TOPICS).map((t) => t.emoji), '🎉', '💪', '🌱', '🎯', '📅', ...Object.values(GOALS).map((g) => g.emoji)];
   return new Set(all.flatMap(graphemes).map(emojiCode));
 }
 

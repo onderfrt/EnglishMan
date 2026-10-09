@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { WORDS, WORDS_BY_ID } from '../data/words';
+import { PACKS, WORDS, WORDS_BY_ID } from '../data/words';
 import { buildSession, choicesFor, nextLevel, unseenWords } from './session';
 import { DAY, newCard } from './srs';
-import { emptyProgress, streak } from './storage';
+import { daysUntil, emptyProgress, streak } from './storage';
 
 const T0 = new Date(2026, 0, 10, 15).getTime();
 const seeded = () => {
@@ -61,6 +61,40 @@ describe('levels', () => {
     const w = WORDS.find((x) => x.en === 'meticulous')!;
     const c = choicesFor(w, seeded()).filter((x) => x !== w);
     expect(c.every((x) => x.pos === 'adjective' && ['C1', 'C2'].includes(x.level))).toBe(true);
+  });
+});
+
+describe('goals', () => {
+  it('draws new words from the Academic Core pack for exam goals, easiest first', () => {
+    const p = emptyProgress();
+    p.settings.goal = 'yds';
+    p.settings.level = 'A1';
+    const words = unseenWords(p);
+    expect(words).toEqual(PACKS.academic.words);
+    expect(words.length).toBeGreaterThanOrEqual(150);
+    expect(words[0].level).toBe('B1');
+    const steps = buildSession(p, T0, {}, seeded());
+    expect(steps.every((s) => PACKS.academic.words.some((w) => w.id === s.wordId))).toBe(true);
+  });
+
+  it('gives every pack word at least two synonyms', () => {
+    for (const w of PACKS.academic.words) {
+      expect(w.synonyms?.length, w.en).toBeGreaterThanOrEqual(2);
+      expect(w.synonyms, w.en).not.toContain(w.en);
+    }
+  });
+
+  it('has no word twice', () => {
+    expect(new Set(WORDS.map((w) => w.en)).size).toBe(WORDS.length);
+  });
+});
+
+describe('daysUntil', () => {
+  it('counts calendar days to the exam', () => {
+    expect(daysUntil('2026-01-10', T0)).toBe(0);
+    expect(daysUntil('2026-01-25', T0)).toBe(15);
+    expect(daysUntil('2026-01-01', T0)).toBeNull();
+    expect(daysUntil(null, T0)).toBeNull();
   });
 });
 

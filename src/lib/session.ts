@@ -1,4 +1,4 @@
-import { LEVEL_ORDER, WORDS, WORDS_BY_ID, type Level, type TopicId, type Word } from '../data/words';
+import { GOALS, LEVEL_ORDER, PACKS, WORDS, WORDS_BY_ID, type Level, type TopicId, type Word } from '../data/words';
 import type { CardState } from './srs';
 import { dayKey, type Progress } from './storage';
 
@@ -72,9 +72,20 @@ export function dueCards(p: Progress, now: number): CardState[] {
     .sort((a, b) => a.due - b.due);
 }
 
-/** Seçili seviyede henüz çalışılmamış kelimeler. */
-export function unseenWords(p: Progress, topic?: TopicId, level: Level | null = p.settings.level): Word[] {
-  return WORDS.filter((w) => !p.cards[w.id] && (!topic || w.topic === topic) && (!level || w.level === level));
+/**
+ * Yeni kelimelerin geldiği kaynak: sınav hedefinde hedefin paketi (ör. Akademik Çekirdek),
+ * Genel İngilizce'de seçili seviyenin kelimeleri.
+ */
+export function sourceWords(p: Progress): Word[] {
+  const pack = p.settings.goal && GOALS[p.settings.goal].pack;
+  if (pack) return PACKS[pack].words;
+  const level = p.settings.level;
+  return WORDS.filter((w) => !level || w.level === level);
+}
+
+/** Kaynakta henüz çalışılmamış kelimeler. */
+export function unseenWords(p: Progress, topic?: TopicId): Word[] {
+  return sourceWords(p).filter((w) => !p.cards[w.id] && (!topic || w.topic === topic));
 }
 
 export function nextLevel(level: Level): Level | null {

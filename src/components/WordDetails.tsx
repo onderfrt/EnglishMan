@@ -1,5 +1,5 @@
 import { POS_TR, type Word } from '../data/words';
-import { SLOW_RATE } from '../lib/speech';
+import { SLOW_RATE, speak } from '../lib/speech';
 import { SpeakButton } from './Speak';
 import { WordVisual } from './WordVisual';
 
@@ -18,6 +18,16 @@ export function WordDetails({ word, note, editable }: { word: Word; note?: strin
         {POS_TR[word.pos]} · {word.level}
       </div>
       <div className="word-tr">{word.tr}</div>
+      {word.synonyms && (
+        <div className="synonyms">
+          <span className="muted small">≈ eş anlamlılar</span>
+          {word.synonyms.map((x) => (
+            <button key={x} type="button" className="chip" onClick={() => speak(x)}>
+              {x}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="example">
         <div className="example-en">
           <Highlighted sentence={word.example} word={word.en} />

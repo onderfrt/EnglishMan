@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LEVEL_ORDER, TOPICS, WORDS, type Level, type TopicId } from '../data/words';
+import { GOALS, LEVEL_ORDER, PACKS, TOPICS, WORDS, type Level, type PackId, type TopicId } from '../data/words';
 import { formatDue, isMastered, type CardState } from '../lib/srs';
 import type { Progress } from '../lib/storage';
 import { EmojiArt } from './EmojiArt';
@@ -18,7 +18,10 @@ const STATUS_LABEL = { new: 'Yeni', learning: 'Öğreniliyor', mastered: 'Kalıc
 export function WordList({ progress, now }: { progress: Progress; now: number }) {
   const [topic, setTopic] = useState<TopicId | 'all'>('all');
   const [filter, setFilter] = useState<Filter>('all');
-  const [level, setLevel] = useState<Level | 'all'>(progress.settings.level ?? 'all');
+  const goalPack = progress.settings.goal ? GOALS[progress.settings.goal].pack : null;
+  // İlk filtre: paket (ör. Akademik Çekirdek) ya da seviye.
+  const [source, setSource] = useState<Level | PackId | 'all'>(goalPack ?? progress.settings.level ?? 'all');
+  const packIds = source in PACKS ? new Set(PACKS[source as PackId].words.map((w) => w.id)) : null;
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState<string | null>(null);
 
@@ -26,17 +29,22 @@ export function WordList({ progress, now }: { progress: Progress; now: number })
   const list = WORDS.filter(
     (w) =>
       (topic === 'all' || w.topic === topic) &&
-      (level === 'all' || w.level === level) &&
+      (source === 'all' || (packIds ? packIds.has(w.id) : w.level === source)) &&
       (filter === 'all' || status(progress.cards[w.id]) === filter) &&
-      (!q || w.en.includes(q) || w.tr.toLowerCase().includes(q)),
+      (!q || w.en.includes(q) || w.tr.toLowerCase().includes(q) || !!w.synonyms?.some((x) => x.includes(q))),
   );
 
   return (
     <div className="word-list">
       <input className="search" placeholder="🔎 Kelime ara (İngilizce ya da Türkçe)" value={query} onChange={(e) => setQuery(e.target.value)} />
       <div className="filters">
-        <select value={level} onChange={(e) => setLevel(e.target.value as Level | 'all')}>
-          <option value="all">Tüm seviyeler</option>
+        <select value={source} onChange={(e) => setSource(e.target.value as Level | PackId | 'all')}>
+          <option value="all">Tüm kelimeler</option>
+          {(Object.keys(PACKS) as PackId[]).map((id) => (
+            <option key={id} value={id}>
+              {PACKS[id].name}
+            </option>
+          ))}
           {LEVEL_ORDER.map((l) => (
             <option key={l} value={l}>
               {l}
