@@ -95,9 +95,53 @@ Bugün uygulama tamamen tarayıcıda çalışıyor ve veriler telefonda saklanı
 - **Kayıp (churn):** Aboneliğini iptal edenlerin oranı.
 - **Kullanıcı edinme maliyeti:** Reklam verirsek bir kullanıcının bize maliyeti; abonelikten kazandığımızdan düşük olmalı.
 
-## 8. Açık kararlar
+## 8. Kararlar
 
-- [ ] İlk ücretli niş: YDS/YÖKDİL mi, IELTS mi, genel mi?
-- [ ] Haftada ayrılabilecek zaman ve başlangıç bütçesi (mağaza hesapları, alan adı, yapay zekâ maliyetleri)
-- [ ] Uygulamanın kalıcı adı ve alan adı ("EnglishMan" adının marka olarak müsaitliği kontrol edilmeli)
+- [x] **İlk ücretli niş: YDS/YÖKDİL ve IELTS.** İkisinin ortak noktası **akademik kelime bilgisi**; bu yüzden ortak bir
+  "Akademik Çekirdek" paketi üzerine sınava özel alıştırmalar kurulacak.
+- [x] **Zaman: haftada 10 saat.** Kodlamayı Claude yapar; Önder'in saatleri ürün kararları, test, içerik kontrolü
+  ve kullanıcılarla konuşmaya gider (bkz. bölüm 10).
+- [ ] **Ad: "EnglishMan"** — ön kontrol yapıldı, resmi kontroller bekleniyor (bkz. bölüm 9).
+- [ ] Başlangıç bütçesi (alan adı, mağaza hesapları, gerekirse marka başvurusu)
 - [ ] Şirket kurma zamanı (ilk satıştan önce)
+
+## 9. Ad: "EnglishMan" kullanılabilir mi?
+
+**Ön araştırma (Ekim 2026):** Web aramalarında "EnglishMan" adlı bir İngilizce öğrenme uygulaması ya da Türkiye'de
+bu adla bir kurs/marka bulunamadı. Bu, adın serbest olduğu anlamına gelmez; kesin sonuç resmi kontrollerle alınır.
+
+**Bilinmesi gereken riskler:**
+- "Englishman" sözlükte olan yaygın bir kelime (İngiliz adam). Bu tür adlar markalaşmada **ayırt edicilik**
+  açısından zayıf kalabilir ve tescilde sorun çıkarabilir. Ayrıca aramalarda sözlük sonuçları ve Sting'in
+  "Englishman in New York" şarkısı öne çıkar; uygulamayı adıyla bulmak zorlaşabilir.
+- Çözüm önerisi: Mağazada adı anahtar kelimelerle birlikte kullanmak, ör. **"EnglishMan: YDS & IELTS Kelime"**.
+  Hem marka korunur hem de arayan kitle uygulamayı bulur.
+
+**Yapılacak kontroller:**
+1. **TÜRKPATENT marka araştırması** (turkpatent.gov.tr, e-Devlet ile giriş): "englishman" ve benzer yazılışlar.
+   Özellikle **41. sınıf** (eğitim hizmetleri) ve **9. sınıf** (yazılım/mobil uygulama) kayıtlarına bakılmalı.
+2. **Mağazalar:** Google Play ve App Store'da "EnglishMan" araması (App Store aynı adda iki uygulamaya izin vermez).
+3. **Alan adı:** englishman.app, englishman.com.tr, englishmanapp.com gibi seçeneklerin müsaitliği.
+4. **Sosyal medya:** Instagram/TikTok/YouTube'da kullanıcı adının boş olup olmadığı.
+5. Ciddi bir benzerlik çıkarsa ya da tescil başvurusu yapılacaksa bir **marka vekiline** danışmak
+   (bu belge hukuki görüş değildir).
+
+## 10. Faz 1 — Sınav odaklı MVP (yaklaşık 8–10 hafta)
+
+**Hedef:** YDS/YÖKDİL ve IELTS hazırlananların her gün açmak isteyeceği bir kelime uygulaması ve 20–50 kişilik beta.
+
+| Hafta | Ürün (Claude kodlar) | Önder (10 saat/hafta) |
+| --- | --- | --- |
+| 1–2 | Hedef seçimi (YDS / YÖKDİL / IELTS / Genel); **Akademik Çekirdek** paketinin ilk 150 kelimesi; kelimelere **eş anlamlılar** (YDS'de paraphrase bilgisi kritik) | Uygulamayı kullanmak; çevirileri ve örnek cümleleri kontrol etmek; ad kontrolleri (bölüm 9) |
+| 3–4 | **YDS tarzı soru:** boşluklu cümle + A–E şıkları; eş anlamlı bulma sorusu; Akademik Çekirdek 300 kelime | YDS/IELTS'e hazırlanan **5–10 kişiyle konuşmak**: en çok neyi zor buluyorlar, ne için para ödüyorlar? |
+| 5–6 | **IELTS konu paketleri** (çevre, eğitim, teknoloji, sağlık…) ve **collocation** soruları (ör. *make a decision*) | YDS/IELTS topluluklarını bulmak (Telegram, forumlar, Instagram); beta test kullanıcısı toplamak |
+| 7–8 | **Hesap + bulut senkronizasyonu**, tanıtım sayfası + bekleme listesi, gizliliğe saygılı analitik | Tanıtım sayfası metinleri; beta davetleri |
+| 9–10 | Günlük hatırlatma bildirimleri; beta geri bildirimlerine göre düzeltmeler | Betayı yürütmek; 7. gün tutunma oranına bakmak |
+
+**İçerik ilkeleri:**
+- Kelime listesi, eş anlamlılar ve örnek cümleler **bize ait** olacak. ÖSYM ve IELTS'in çıkmış soruları telif
+  hakkıyla korunur; birebir kullanılmaz, kendi sınav tarzı sorularımızı yazarız.
+- YÖKDİL alan farkı (Fen / Sağlık / Sosyal) ilk sürümde değil, sonraki paketlerde.
+
+**Faz 1 sonunda bakılacak tek soru:** Beta kullanıcılarının en az %20'si 7. gün hâlâ çalışıyor mu?
+Evetse Faz 2'ye (Google Play + premium), hayırsa ürünü düzeltmeye devam.
