@@ -99,7 +99,7 @@ Bugün uygulama tamamen tarayıcıda çalışıyor ve veriler telefonda saklanı
 
 - [x] **İlk ücretli niş: YDS/YÖKDİL ve IELTS.** İkisinin ortak noktası **akademik kelime bilgisi**; bu yüzden ortak bir
   "Akademik Çekirdek" paketi üzerine sınava özel alıştırmalar kurulacak.
-- [x] **Zaman: haftada 10 saat.** Kodlamayı Claude yapar; Önder'in saatleri ürün kararları, test, içerik kontrolü
+- [x] **Zaman: haftada 10 saat.** Kodlamayı Claude yapar; proje sahibinin saatleri ürün kararları, test, içerik kontrolü
   ve kullanıcılarla konuşmaya gider (bkz. bölüm 10).
 - [ ] **Ad: "EnglishMan"** — ön kontrol yapıldı, resmi kontroller bekleniyor (bkz. bölüm 9).
 - [ ] Başlangıç bütçesi (alan adı, mağaza hesapları, gerekirse marka başvurusu)
@@ -130,7 +130,7 @@ bu adla bir kurs/marka bulunamadı. Bu, adın serbest olduğu anlamına gelmez; 
 
 **Hedef:** YDS/YÖKDİL ve IELTS hazırlananların her gün açmak isteyeceği bir kelime uygulaması ve 20–50 kişilik beta.
 
-| Hafta | Ürün (Claude kodlar) | Önder (10 saat/hafta) |
+| Hafta | Ürün (Claude kodlar) | Proje sahibi (10 saat/hafta) |
 | --- | --- | --- |
 | 1–2 | Hedef seçimi (YDS / YÖKDİL / IELTS / Genel); **Akademik Çekirdek** paketinin ilk 150 kelimesi; kelimelere **eş anlamlılar** (YDS'de paraphrase bilgisi kritik) | Uygulamayı kullanmak; çevirileri ve örnek cümleleri kontrol etmek; ad kontrolleri (bölüm 9) |
 | 3–4 | **YDS tarzı soru:** boşluklu cümle + A–E şıkları; eş anlamlı bulma sorusu; Akademik Çekirdek 300 kelime | YDS/IELTS'e hazırlanan **5–10 kişiyle konuşmak**: en çok neyi zor buluyorlar, ne için para ödüyorlar? |
