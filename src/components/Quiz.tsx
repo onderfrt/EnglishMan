@@ -180,7 +180,7 @@ export function Quiz({ word, mode, note, autoSpeak, onAnswer, onNext }: Props) {
       {result && (
         <>
           <WordDetails word={word} note={note} />
-          <button ref={nextRef} className="btn btn-primary btn-block" onClick={onNext}>
+          <button ref={nextRef} className="btn btn-primary btn-block sticky-action" onClick={onNext}>
             Devam →
           </button>
         </>

@@ -850,3 +850,33 @@ select {
   padding: 8px 12px;
   margin: -4px 0 12px;
 }
+
+/* Uzun kartlarda "Devam" butonu ekranın altında sabit kalır, kaydırmaya gerek kalmaz. */
+.sticky-action {
+  position: sticky;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 5;
+  padding: 14px;
+  font-size: 17px;
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+}
+.goal-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
+}
+.goal-chip .emoji-art {
+  font-size: 20px;
+}
+.goal-chip .muted {
+  margin-left: auto;
+}

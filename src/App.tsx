@@ -111,6 +111,7 @@ export default function App() {
           progress={progress}
           onSelect={setLevel}
           onCancel={level ? () => setPicking(null) : () => setGoal(null)}
+          onChangeGoal={() => setPicking('goal')}
         />
       </main>
     );

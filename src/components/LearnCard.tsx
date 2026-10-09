@@ -39,7 +39,7 @@ export function LearnCard({ word, note, autoSpeak, onNote, onNext }: Props) {
         />
         <small>Kelimeyi bildiğin bir şeye bağlamak (ses benzerliği, bir anı, komik bir sahne) akılda kalmasını çok kolaylaştırır.</small>
       </label>
-      <button className="btn btn-primary btn-block" onClick={next}>
+      <button className="btn btn-primary btn-block sticky-action" onClick={next}>
         Anladım, devam →
       </button>
     </div>

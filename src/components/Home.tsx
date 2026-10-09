@@ -59,18 +59,27 @@ export function Home({ progress, now, onStart, onChangeGoal, onChangeLevel, onSe
         </button>
       ) : (
         level && (
-          <button className="level-banner" onClick={onChangeLevel}>
-            <span className={`level-code lvl-${level}`}>{level}</span>
-            <span className="level-text">
-              <b>{LEVELS[level].name}</b>
-              <span className="topic-bar">
-                <span style={{ width: `${(sourceDone / sourceList.length) * 100}%` }} />
+          <>
+            <button className="goal-chip" onClick={onChangeGoal}>
+              <EmojiArt emoji={GOALS.general.emoji} />
+              <span>
+                Hedef: <b>{GOALS.general.name}</b>
               </span>
-            </span>
-            <span className="muted small">
-              {sourceDone}/{sourceList.length} · Değiştir ▾
-            </span>
-          </button>
+              <span className="muted small">YDS, YÖKDİL, IELTS · Değiştir ▾</span>
+            </button>
+            <button className="level-banner" onClick={onChangeLevel}>
+              <span className={`level-code lvl-${level}`}>{level}</span>
+              <span className="level-text">
+                <b>{LEVELS[level].name}</b>
+                <span className="topic-bar">
+                  <span style={{ width: `${(sourceDone / sourceList.length) * 100}%` }} />
+                </span>
+              </span>
+              <span className="muted small">
+                {sourceDone}/{sourceList.length} · Değiştir ▾
+              </span>
+            </button>
+          </>
         )
       )}
       {perDayNeeded !== null && perDayNeeded > newPerDay && (
@@ -121,10 +130,7 @@ export function Home({ progress, now, onStart, onChangeGoal, onChangeLevel, onSe
           <>
             <h2>Bugünlük bu kadar! 🎉</h2>
             <p className="muted">Tekrar zamanı gelen kelime yok. İstersen birkaç yeni kelime daha öğrenebilirsin.</p>
-            <button
-              className="btn btn-block"
-              onClick={() => onStart({ extraNew: 4 })}
-            >
+            <button className="btn btn-block" onClick={() => onStart({ extraNew: 4 })}>
               +4 yeni kelime
             </button>
           </>
@@ -163,12 +169,12 @@ export function Home({ progress, now, onStart, onChangeGoal, onChangeLevel, onSe
         <summary>Bu uygulama nasıl çalışıyor?</summary>
         <ul>
           <li>
-            <b>Aralıklı tekrar:</b> Doğru bildiğin kelimeler giderek daha uzun aralıklarla (1 gün → 3 gün → 1 hafta → ...) sorulur,
-            yanlış bildiklerin hemen geri gelir. Böylece unutmak üzereyken hatırlarsın ve kelime kalıcı olur.
+            <b>Aralıklı tekrar:</b> Doğru bildiğin kelimeler giderek daha uzun aralıklarla (1 gün → 3 gün → 1 hafta → ...)
+            sorulur, yanlış bildiklerin hemen geri gelir. Böylece unutmak üzereyken hatırlarsın ve kelime kalıcı olur.
           </li>
           <li>
-            <b>Görsel çağrışım:</b> Her kelime bir görselle eşleşir; soyut kelimelerde birkaç görsel bir sahne anlatır (ör. <i>quit</i> =
-            işe el sallamak). Beyin resimleri kelimelerden çok daha kolay hatırlar.
+            <b>Görsel çağrışım:</b> Her kelime bir görselle eşleşir; soyut kelimelerde birkaç görsel bir sahne anlatır (ör.{' '}
+            <i>quit</i> = işe el sallamak). Beyin resimleri kelimelerden çok daha kolay hatırlar.
           </li>
           <li>
             <b>Renk kodu:</b> Görselin arka planı kelime türünü gösterir: <span className="pos-chip pos-noun">isim</span>{' '}
@@ -181,7 +187,8 @@ export function Home({ progress, now, onStart, onChangeGoal, onChangeLevel, onSe
             başka kelimelerle verilir; eş anlamlıları bilmek okuma ve çeviri sorularında büyük avantaj sağlar.
           </li>
           <li>
-            <b>Kendi görselin:</b> Bir kelimeye kendi fotoğrafını ya da çizimini ekleyebilirsin. Kendi seçtiğin resim en güçlü bağı kurar.
+            <b>Kendi görselin:</b> Bir kelimeye kendi fotoğrafını ya da çizimini ekleyebilirsin. Kendi seçtiğin resim en güçlü
+            bağı kurar.
           </li>
           <li>
             <b>Aktif hatırlama:</b> Sadece okumak yerine cevabı kendin bulursun; önce tanıma, sonra yazma ve dinleme.

@@ -7,9 +7,10 @@ interface Props {
   progress: Progress;
   onSelect: (level: Level) => void;
   onCancel?: () => void;
+  onChangeGoal: () => void;
 }
 
-export function LevelPicker({ progress, onSelect, onCancel }: Props) {
+export function LevelPicker({ progress, onSelect, onCancel, onChangeGoal }: Props) {
   const [testing, setTesting] = useState(false);
   const current = progress.settings.level;
 
@@ -26,6 +27,9 @@ export function LevelPicker({ progress, onSelect, onCancel }: Props) {
         </p>
         <button className="btn btn-primary btn-block" onClick={() => setTesting(true)}>
           🧭 Seviyemi bilmiyorum, kısa bir test yapalım
+        </button>
+        <button className="btn btn-block" onClick={onChangeGoal}>
+          🎯 Sınava mı hazırlanıyorsun? Hedefi değiştir (YDS, YÖKDİL, IELTS)
         </button>
       </div>
       <div className="levels">
