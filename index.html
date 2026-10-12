@@ -7,6 +7,13 @@
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <title>EnglishMan</title>
+    <script>
+      // Seçilen temayı sayfa çizilmeden uygula (açılışta yanlış renkte yanıp sönmesin).
+      try {
+        var t = JSON.parse(localStorage.getItem('englishman:progress:v1') || '{}').settings.theme;
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

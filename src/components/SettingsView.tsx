@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { GOALS, LEVELS } from '../data/words';
 import { canSpeak, englishVoices, onVoicesChanged, SLOW_RATE, speak } from '../lib/speech';
-import { emptyProgress, parseProgress, type Progress, type Settings } from '../lib/storage';
+import { emptyProgress, parseProgress, type Progress, type Settings, type Theme } from '../lib/storage';
+
+const THEMES: [Theme, string][] = [
+  ['system', '📱 Sistem'],
+  ['light', '☀️ Açık'],
+  ['dark', '🌙 Koyu'],
+];
 
 interface Props {
   progress: Progress;
@@ -38,6 +44,26 @@ export function SettingsView({ progress, onChange, onChangeGoal, onChangeLevel }
 
   return (
     <div className="settings">
+      <div className="card">
+        <div className="setting">
+          <span>Görünüm</span>
+          <div className="segmented" role="radiogroup" aria-label="Görünüm">
+            {THEMES.map(([value, label]) => (
+              <button
+                key={value}
+                role="radio"
+                aria-checked={s.theme === value}
+                className={s.theme === value ? 'active' : ''}
+                onClick={() => set({ theme: value })}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <small className="muted">“Sistem” seçiliyken uygulama telefonunun açık/koyu temasını izler.</small>
+        </div>
+      </div>
+
       <div className="card">
         <div className="setting setting-inline">
           <span>

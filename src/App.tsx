@@ -10,9 +10,15 @@ import type { TypedResult } from './lib/answer';
 import { buildSession, type SessionOptions, type Step } from './lib/session';
 import { setPreferredVoice } from './lib/speech';
 import { newCard, review, type Grade } from './lib/srs';
-import { dayKey, loadProgress, saveProgress, type Progress } from './lib/storage';
+import { dayKey, loadProgress, saveProgress, type Progress, type Theme } from './lib/storage';
 
 type Tab = 'home' | 'words' | 'settings';
+
+function applyTheme(theme: Theme) {
+  const root = document.documentElement;
+  if (theme === 'system') delete root.dataset.theme;
+  else root.dataset.theme = theme;
+}
 
 const GRADE: Record<TypedResult, Grade> = { correct: 'good', typo: 'hard', wrong: 'again' };
 
@@ -25,6 +31,7 @@ export default function App() {
 
   useEffect(() => saveProgress(progress), [progress]);
   useEffect(() => setPreferredVoice(progress.settings.voiceURI), [progress.settings.voiceURI]);
+  useEffect(() => applyTheme(progress.settings.theme), [progress.settings.theme]);
 
   // Sayfa açık kalırsa "tekrar zamanı gelen" sayısı güncel kalsın.
   useEffect(() => {

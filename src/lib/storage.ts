@@ -13,7 +13,11 @@ export interface Settings {
   autoSpeak: boolean;
   /** Seçilen İngilizce ses (null: otomatik). */
   voiceURI: string | null;
+  /** Görünüm: telefonun temasını izle ya da açık/koyu sabitle. */
+  theme: Theme;
 }
+
+export type Theme = 'system' | 'light' | 'dark';
 
 export interface DayLog {
   /** Bugün yapılan toplam tekrar sayısı. */
@@ -42,6 +46,7 @@ export const DEFAULT_SETTINGS: Settings = {
   maxReviewsPerSession: 40,
   autoSpeak: true,
   voiceURI: null,
+  theme: 'system',
 };
 
 export function emptyProgress(): Progress {

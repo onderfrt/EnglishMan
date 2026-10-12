@@ -1,5 +1,7 @@
 import { GOALS, LEVEL_ORDER, PACKS, WORDS, WORDS_BY_ID, type Level, type TopicId, type Word } from '../data/words';
 import type { CardState } from './srs';
+import { clozeQuestion, synonymQuestion } from './exam';
+import { shuffle, type Rng } from './random';
 import { dayKey, type Progress } from './storage';
 
 /**
@@ -7,37 +9,42 @@ import { dayKey, type Progress } from './storage';
  * önce tanıma (İngilizce → Türkçe seç), sonra hatırlama (Türkçe → İngilizce seç),
  * en son üretme (İngilizcesini yaz / duyduğunu yaz). Farklı yönlerden hatırlamak öğrenmeyi derinleştirir.
  */
-export type QuizMode = 'choice-en-tr' | 'choice-tr-en' | 'listen-choice' | 'type-tr-en' | 'listen-type';
+export type QuizMode =
+  | 'choice-en-tr'
+  | 'choice-tr-en'
+  | 'listen-choice'
+  | 'type-tr-en'
+  | 'listen-type'
+  /** YDS tarzı: örnek cümledeki boşluğu A–E şıklarından doldur. */
+  | 'cloze'
+  /** YDS tarzı: kelimeye anlamca en yakın şıkkı bul. */
+  | 'synonym';
 
 export type Step =
   | { kind: 'learn'; wordId: string }
   | { kind: 'quiz'; wordId: string; mode: QuizMode; /** Yalnızca ilk deneme SRS'e işlenir. */ graded: boolean };
 
-export type Rng = () => number;
-
-export function shuffle<T>(arr: T[], rng: Rng = Math.random): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
+export { shuffle, type Rng } from './random';
 
 function pick<T>(arr: T[], rng: Rng): T {
   return arr[Math.floor(rng() * arr.length)];
 }
 
-export function modeFor(card: CardState | undefined, rng: Rng = Math.random): QuizMode {
+export function modeFor(card: CardState | undefined, rng: Rng = Math.random, word?: Word, exam = false): QuizMode {
   const reps = card?.reps ?? 0;
   if (reps === 0) return 'choice-en-tr';
-  if (reps === 1) return pick<QuizMode>(['choice-tr-en', 'listen-choice'], rng);
-  return pick<QuizMode>(['type-tr-en', 'type-tr-en', 'listen-type', 'choice-tr-en'], rng);
+  // Sınav hedefinde YDS tarzı sorular daha sık çıkar.
+  const examModes: QuizMode[] = [];
+  if (word && clozeQuestion(word)) examModes.push('cloze');
+  if (word && synonymQuestion(word)) examModes.push('synonym');
+  const weighted = exam ? [...examModes, ...examModes] : examModes;
+  if (reps === 1) return pick<QuizMode>(['choice-tr-en', 'listen-choice', ...weighted], rng);
+  return pick<QuizMode>(['type-tr-en', 'type-tr-en', 'listen-type', 'choice-tr-en', ...weighted], rng);
 }
 
 /** Yanlış cevaptan sonra aynı kelime oturum içinde daha kolay bir soruyla tekrar sorulur. */
 export function retryMode(mode: QuizMode): QuizMode {
-  return mode === 'type-tr-en' || mode === 'listen-type' ? 'choice-tr-en' : mode;
+  return ['type-tr-en', 'listen-type', 'cloze', 'synonym'].includes(mode) ? 'choice-tr-en' : mode;
 }
 
 const levelDistance = (a: Level, b: Level) => Math.abs(LEVEL_ORDER.indexOf(a) - LEVEL_ORDER.indexOf(b));
@@ -95,6 +102,7 @@ export function nextLevel(level: Level): Level | null {
 const CHUNK = 4;
 
 export function buildSession(p: Progress, now: number, opts: SessionOptions = {}, rng: Rng = Math.random): Step[] {
+  const isExam = !!(p.settings.goal && GOALS[p.settings.goal].pack);
   const reviews = dueCards(p, now)
     .filter((c) => !opts.topic || WORDS_BY_ID[c.wordId].topic === opts.topic)
     .slice(0, p.settings.maxReviewsPerSession);
@@ -102,7 +110,7 @@ export function buildSession(p: Progress, now: number, opts: SessionOptions = {}
   const steps: Step[] = shuffle(reviews, rng).map((c) => ({
     kind: 'quiz',
     wordId: c.wordId,
-    mode: modeFor(c, rng),
+    mode: modeFor(c, rng, WORDS_BY_ID[c.wordId], isExam),
     graded: true,
   }));
 

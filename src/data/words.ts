@@ -5,6 +5,7 @@ import { B2 } from './b2.ts';
 import { C1 } from './c1.ts';
 import { C2 } from './c2.ts';
 import { ACADEMIC, ACADEMIC_EXISTING } from './academic.ts';
+import { ACADEMIC_2 } from './academic2.ts';
 import type { AcademicRow, Level, LevelData, PartOfSpeech, TopicId } from './types.ts';
 
 export type { Level, PartOfSpeech, TopicId } from './types.ts';
@@ -86,19 +87,21 @@ const GENERAL_WORDS: Word[] = LEVEL_ORDER.flatMap((level) =>
   ),
 );
 
-const ACADEMIC_WORDS: Word[] = (Object.entries(ACADEMIC) as [TopicId, AcademicRow[]][]).flatMap(([topic, rows]) =>
-  rows.map(([en, tr, pos, emoji, example, exampleTr, level, synonyms]) => ({
-    id: `${topic}:${slug(en)}`,
-    en,
-    tr,
-    pos,
-    emoji,
-    example,
-    exampleTr,
-    topic,
-    level,
-    synonyms,
-  })),
+const ACADEMIC_WORDS: Word[] = [ACADEMIC, ACADEMIC_2].flatMap((data) =>
+  (Object.entries(data) as [TopicId, AcademicRow[]][]).flatMap(([topic, rows]) =>
+    rows.map(([en, tr, pos, emoji, example, exampleTr, level, synonyms]) => ({
+      id: `${topic}:${slug(en)}`,
+      en,
+      tr,
+      pos,
+      emoji,
+      example,
+      exampleTr,
+      topic,
+      level,
+      synonyms,
+    })),
+  ),
 );
 
 export const WORDS: Word[] = [...GENERAL_WORDS, ...ACADEMIC_WORDS];

@@ -1,13 +1,13 @@
 # EnglishMan 🇬🇧
 
 İngilizceyi öğrenirken birlikte geliştirdiğimiz, kendi kendine test edilen bir öğrenme uygulaması.
-İlk modül: **kelime öğrenimi**. 417 kelime: A1'den C2'ye 6 seviye ve sınavlar için **Akademik Çekirdek** paketi.
+İlk modül: **kelime öğrenimi**. 529 kelime: A1'den C2'ye 6 seviye ve sınavlar için **Akademik Çekirdek** paketi.
 
 ## Hedefler ve seviyeler
 
 İlk açılışta hedefini seçersin: **YDS**, **YÖKDİL**, **IELTS** ya da **Genel İngilizce**.
 
-- **Sınav hedefleri:** Yeni kelimeler Akademik Çekirdek paketinden (190 kelime, B1→C2 sırasıyla) gelir. Her kelimenin
+- **Sınav hedefleri:** Yeni kelimeler Akademik Çekirdek paketinden (302 kelime, B1→C2 sırasıyla) gelir. Her kelimenin
   eş anlamlıları da gösterilir. *although, whereas, despite* gibi bağlaçlar ve edatlar da pakete dahildir.
   Sınav tarihini girersen ana sayfada kalan gün ve paketi bitirmek için günde kaç yeni kelime gerektiği görünür.
 - **Genel İngilizce:** Seviyeni seçersin ya da 2 dakikalık seviye testini yaparsın. Testte her seviyeden 5 kelime sorulur,
@@ -27,6 +27,7 @@ uygulama seni bir sonraki seviyeye davet eder. Seviyeyi ana sayfadaki seviye kar
 | **Bağlam** | Her kelime bir örnek cümle ve Türkçe çevirisiyle gelir; kelime cümlede vurgulanır. |
 | **Telaffuz** | Kelime ve cümleler sesli okunur (normal ve yavaş hız). |
 | **Kişisel çağrışım (Keyword method)** | Yeni kelimeye kendi hafıza ipucunu yazabilirsin; yazma sorularında ipucu olarak gösterilir. |
+| **YDS tarzı sorular** | Boşluk doldurma (örnek cümle + A–E şıkları, şıklar aynı dilbilgisi biçiminde; bağlaç sorularında *although ↔ despite* gibi ayrımlar) ve eş anlamlı bulma. Sınav hedefinde daha sık çıkar. |
 | **Hatalı kelimeyi hemen tekrar** | Oturumda yanlış bilinen kelime birkaç soru sonra tekrar (daha kolay biçimde) sorulur. |
 
 ## Çalıştırma
@@ -49,10 +50,11 @@ Telefonda açıp tarayıcı menüsünden **"Ana ekrana ekle"** dersen uygulama g
 ```
 src/
   data/a1.ts … c2.ts   Seviyelere göre kelime listeleri (konu, emoji, örnek cümle)
-  data/academic.ts     Akademik Çekirdek kelimeleri ve eş anlamlılar
+  data/academic*.ts    Akademik Çekirdek kelimeleri ve eş anlamlılar
   data/words.ts        Seviyeler, konular, hedefler, paketler ve tüm kelimelerin birleştirilmesi
   lib/srs.ts           Aralıklı tekrar algoritması
   lib/session.ts       Günlük oturumun oluşturulması, soru tipleri, çeldirici şıklar
+  lib/exam.ts          YDS tarzı sorular: boşluk doldurma (çekim uyumlu şıklar) ve eş anlamlı
   lib/answer.ts        Yazılan cevabın kontrolü (yazım hatası toleransı, İng/Amerikan yazımı)
   lib/storage.ts       İlerlemenin kaydı, günlük seri
   lib/speech.ts        Sesli okuma (tarayıcının Text-to-Speech'i)
@@ -74,6 +76,7 @@ Gelir modeli ve ürünleştirme planı: [docs/is-plani.md](docs/is-plani.md)
 - [x] Kelime modülü: aralıklı tekrar, görsel, ses, 5 soru tipi, ilerleme takibi
 - [x] A1–C2 seviye seçimi ve seviye testi
 - [x] Hedef seçimi (YDS / YÖKDİL / IELTS), sınav tarihi, Akademik Çekirdek paketi ve eş anlamlılar
+- [x] YDS tarzı boşluk doldurma ve eş anlamlı soruları, Akademik Çekirdek 302 kelime, açık/koyu tema seçimi
 - [x] 3D görseller, görsel sahneler, tür renk kodu, kendi görselini ekleme
 - [ ] Kelime listesini büyütmek (Oxford 3000/5000) ve kendi kelimeni ekleyebilme
 - [ ] Yapay zekâ ile üretilmiş, kelimeye özel çağrışım resimleri
