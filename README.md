@@ -30,6 +30,20 @@ uygulama seni bir sonraki seviyeye davet eder. Seviyeyi ana sayfadaki seviye kar
 | **YDS tarzı sorular** | Boşluk doldurma (örnek cümle + A–E şıkları, şıklar aynı dilbilgisi biçiminde; bağlaç sorularında *although ↔ despite* gibi ayrımlar) ve eş anlamlı bulma. Sınav hedefinde daha sık çıkar. |
 | **Hatalı kelimeyi hemen tekrar** | Oturumda yanlış bilinen kelime birkaç soru sonra tekrar (daha kolay biçimde) sorulur. |
 
+## Kendi kelimelerin
+
+**Kelimeler → ✍️ Kelimelerim** bölümünden kendi kelimelerini ekleyebilirsin:
+
+- **Tek tek:** İngilizce kelime ve Türkçe anlam zorunlu; örnek cümle, çevirisi, kelime türü, eş anlamlılar, emoji ve
+  kendi fotoğrafın isteğe bağlı. Yazarken kartın önizlemesi görünür. Kelimeler sonradan düzenlenebilir ve silinebilir.
+- **Toplu:** Metni yapıştır ya da `.csv` / `.txt` dosyası yükle. Her satır bir kelime:
+  `kelime ; anlam ; örnek cümle ; cümlenin çevirisi`. Sekmeyle ayrılmış satırlar (Excel, Google E-Tablolar, Quizlet,
+  Anki) ve `kelime - anlam` biçimi de çalışır. Eklemeden önce önizleme gösterilir; zaten var olan kelimeler atlanır.
+  Excel için hazır şablon indirilebilir.
+- Kendi kelimelerin, hedefin ne olursa olsun yeni kelimeler arasında **önce** öğretilir ve aynı soru tipleriyle sorulur
+  (örnek cümle varsa boşluk doldurma, en az iki eş anlamlı varsa eş anlamlı sorusu).
+- Yedek dosyası kendi kelimelerini ve eklediğin fotoğrafları da içerir.
+
 ## Çalıştırma
 
 ```bash
@@ -57,6 +71,9 @@ src/
   lib/exam.ts          YDS tarzı sorular: boşluk doldurma (çekim uyumlu şıklar) ve eş anlamlı
   lib/answer.ts        Yazılan cevabın kontrolü (yazım hatası toleransı, İng/Amerikan yazımı)
   lib/storage.ts       İlerlemenin kaydı, günlük seri
+  lib/catalog.ts       Hazır kelimeler + kullanıcının kendi kelimeleri (tüm uygulama buradan okur)
+  lib/customWords.ts   Kendi kelime oluşturma, toplu içe aktarma ayrıştırıcısı, Excel şablonu
+  lib/backup.ts        Yedek dosyası (ilerleme + kendi kelimeler + görseller)
   lib/speech.ts        Sesli okuma (tarayıcının Text-to-Speech'i)
   lib/images.ts        Kullanıcının kelimelere eklediği kendi görselleri
 emoji-assets.ts        Derlemede kullanılan 3D emoji görsellerini public/emoji/ altına kopyalar
@@ -78,7 +95,8 @@ Gelir modeli ve ürünleştirme planı: [docs/is-plani.md](docs/is-plani.md)
 - [x] Hedef seçimi (YDS / YÖKDİL / IELTS), sınav tarihi, Akademik Çekirdek paketi ve eş anlamlılar
 - [x] YDS tarzı boşluk doldurma ve eş anlamlı soruları, Akademik Çekirdek 302 kelime, açık/koyu tema seçimi
 - [x] 3D görseller, görsel sahneler, tür renk kodu, kendi görselini ekleme
-- [ ] Kelime listesini büyütmek (Oxford 3000/5000) ve kendi kelimeni ekleyebilme
+- [x] Kendi kelimeni ekleme, düzenleme, toplu içe aktarma (CSV / Excel / Quizlet / Anki)
+- [ ] Kelime listesini büyütmek
 - [ ] Yapay zekâ ile üretilmiş, kelimeye özel çağrışım resimleri
 - [ ] Cümle tamamlama (boşluk doldurma) soruları
 - [ ] **Reading:** seviyeye uygun kısa metinler, bilinmeyen kelimeye dokununca anlam + listeye ekleme

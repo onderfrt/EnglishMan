@@ -126,6 +126,14 @@ bu adla bir kurs/marka bulunamadı. Bu, adın serbest olduğu anlamına gelmez; 
 5. Ciddi bir benzerlik çıkarsa ya da tescil başvurusu yapılacaksa bir **marka vekiline** danışmak
    (bu belge hukuki görüş değildir).
 
+## 9b. Kullanıcı görüşmelerinden çıkan fark yaratan özellik
+
+YDS/IELTS'e hazırlananlarla yapılan görüşmelerden sonra **kendi kelimelerini ekleme** özelliği eklendi (Ekim 2026):
+tek tek ekleme/düzenleme (anlam, örnek cümle, eş anlamlı, kendi fotoğrafı) ve toplu içe aktarma (CSV, Excel,
+Quizlet, Anki). Kullanıcı kendi kaynağındaki (deneme sınavı, kitap, dizi) kelimeleri aralıklı tekrar ve YDS tarzı
+sorularla çalışabiliyor. **Premium adayı:** ücretsiz sürümde sınırlı sayıda (ör. 50) kendi kelime, premium'da sınırsız
+ve cihazlar arası senkronizasyon.
+
 ## 10. Faz 1 — Sınav odaklı MVP (yaklaşık 8–10 hafta)
 
 **Hedef:** YDS/YÖKDİL ve IELTS hazırlananların her gün açmak isteyeceği bir kelime uygulaması ve 20–50 kişilik beta.

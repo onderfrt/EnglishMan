@@ -23,6 +23,8 @@ export interface Word {
   level: Level;
   /** Eş anlamlılar (sınavlarda paraphrase bilgisi için önemli). */
   synonyms?: string[];
+  /** Kullanıcının kendi eklediği kelime (seviyesi gösterilmez, düzenlenebilir). */
+  custom?: boolean;
 }
 
 export const LEVELS: Record<Level, { name: string; description: string }> = {
@@ -53,6 +55,7 @@ export const TOPICS: Record<TopicId, { name: string; emoji: string }> = {
   quantity: { name: 'Miktar ve Karşılaştırma', emoji: '📊' },
   argument: { name: 'Görüş ve Bağlaçlar', emoji: '💬' },
   science: { name: 'Bilim ve Sağlık', emoji: '🩺' },
+  custom: { name: 'Kendi Kelimelerim', emoji: '✍️' },
 };
 
 export const POS_TR: Record<PartOfSpeech, string> = {
@@ -63,6 +66,7 @@ export const POS_TR: Record<PartOfSpeech, string> = {
   'phrasal verb': 'deyimsel fiil',
   conjunction: 'bağlaç',
   preposition: 'edat',
+  other: 'diğer',
 };
 
 const DATA: Record<Level, LevelData> = { A1, A2, B1, B2, C1, C2 };

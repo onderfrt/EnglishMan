@@ -4,9 +4,11 @@ import { GoalPicker } from './components/GoalPicker';
 import { LevelPicker } from './components/LevelPicker';
 import { SessionView } from './components/SessionView';
 import { SettingsView } from './components/SettingsView';
-import { WordList } from './components/WordList';
-import type { Goal, Level } from './data/words';
+import { WordsTab, type WordsView } from './components/WordsTab';
+import { GOALS, type Goal, type Level, type Word } from './data/words';
 import type { TypedResult } from './lib/answer';
+import { setCustomWords } from './lib/catalog';
+import { removeUserImage } from './lib/images';
 import { buildSession, type SessionOptions, type Step } from './lib/session';
 import { setPreferredVoice } from './lib/speech';
 import { newCard, review, type Grade } from './lib/srs';
@@ -25,6 +27,9 @@ const GRADE: Record<TypedResult, Grade> = { correct: 'good', typo: 'hard', wrong
 export default function App() {
   const [progress, setProgress] = useState<Progress>(loadProgress);
   const [tab, setTab] = useState<Tab>('home');
+  const [wordsView, setWordsView] = useState<WordsView>('builtin');
+  // Kendi kelimeler tüm uygulamada (oturum, sorular, listeler) görünür olsun.
+  setCustomWords(progress.customWords);
   const [session, setSession] = useState<Step[] | null>(null);
   const [now, setNow] = useState(Date.now());
   const [picking, setPicking] = useState<'goal' | 'level' | null>(null);
@@ -65,6 +70,26 @@ export default function App() {
       };
     });
   };
+
+  const saveCustomWord = (word: Word) =>
+    setProgress((p) => ({
+      ...p,
+      customWords: p.customWords.some((w) => w.id === word.id)
+        ? p.customWords.map((w) => (w.id === word.id ? word : w))
+        : [...p.customWords, word],
+    }));
+
+  const deleteCustomWord = (id: string) => {
+    removeUserImage(id);
+    setProgress((p) => {
+      const { [id]: _card, ...cards } = p.cards;
+      const { [id]: _note, ...notes } = p.notes;
+      return { ...p, cards, notes, customWords: p.customWords.filter((w) => w.id !== id) };
+    });
+  };
+
+  const importCustomWords = (words: Word[]) =>
+    setProgress((p) => ({ ...p, customWords: [...p.customWords, ...words] }));
 
   const setNote = (wordId: string, note: string) =>
     setProgress((p) => {
@@ -152,9 +177,24 @@ export default function App() {
           onChangeGoal={() => setPicking('goal')}
           onChangeLevel={() => setPicking('level')}
           onSetLevel={setLevel}
+          onOpenCustom={() => {
+            setWordsView('custom');
+            setTab('words');
+          }}
         />
       )}
-      {tab === 'words' && <WordList progress={progress} now={now} />}
+      {tab === 'words' && (
+        <WordsTab
+          view={wordsView}
+          onViewChange={setWordsView}
+          progress={progress}
+          now={now}
+          level={progress.settings.level ?? (goal && GOALS[goal].pack ? 'B2' : 'B1')}
+          onSave={saveCustomWord}
+          onDelete={deleteCustomWord}
+          onImport={importCustomWords}
+        />
+      )}
       {tab === 'settings' && (
         <SettingsView
           progress={progress}

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { GOALS, LEVELS } from '../data/words';
 import { canSpeak, englishVoices, onVoicesChanged, SLOW_RATE, speak } from '../lib/speech';
-import { emptyProgress, parseProgress, type Progress, type Settings, type Theme } from '../lib/storage';
+import { exportBackup, importBackup } from '../lib/backup';
+import { downloadText } from '../lib/download';
+import { emptyProgress, type Progress, type Settings, type Theme } from '../lib/storage';
 
 const THEMES: [Theme, string][] = [
   ['system', '📱 Sistem'],
@@ -24,19 +26,14 @@ export function SettingsView({ progress, onChange, onChangeGoal, onChangeLevel }
   const s = progress.settings;
   const set = (patch: Partial<Settings>) => onChange({ ...progress, settings: { ...s, ...patch } });
 
-  const exportData = () => {
-    const blob = new Blob([JSON.stringify(progress, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `englishman-yedek-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  };
+  const exportData = () =>
+    downloadText(`englishman-yedek-${new Date().toISOString().slice(0, 10)}.json`, exportBackup(progress), 'application/json');
 
   const importData = async (file: File) => {
     try {
-      onChange(parseProgress(await file.text()));
-      setMessage('✅ Yedek geri yüklendi.');
+      const { progress: restored, warning } = importBackup(await file.text());
+      onChange(restored);
+      setMessage(warning ? `⚠️ ${warning}` : '✅ Yedek geri yüklendi.');
     } catch {
       setMessage('❌ Bu dosya geçerli bir EnglishMan yedeği değil.');
     }
@@ -149,7 +146,10 @@ export function SettingsView({ progress, onChange, onChangeGoal, onChangeLevel }
 
       <div className="card">
         <h3>Yedekleme</h3>
-        <p className="muted small">İlerlemen bu cihazın tarayıcısında saklanır. Başka cihaza taşımak ya da yedeklemek için dışa aktar.</p>
+        <p className="muted small">
+          İlerlemen, kendi kelimelerin ve eklediğin görseller bu cihazın tarayıcısında saklanır. Başka cihaza taşımak ya da
+          yedeklemek için dışa aktar.
+        </p>
         <div className="row">
           <button className="btn" onClick={exportData}>
             ⬇️ Dışa aktar
@@ -177,7 +177,8 @@ export function SettingsView({ progress, onChange, onChangeGoal, onChangeLevel }
         <button
           className="btn btn-danger"
           onClick={() => {
-            if (confirm('Tüm ilerlemen silinecek. Emin misin?')) onChange({ ...emptyProgress(), settings: s });
+            if (confirm('Tüm ilerlemen silinecek (kendi kelimelerin kalır). Emin misin?'))
+              onChange({ ...emptyProgress(), customWords: progress.customWords, settings: s });
           }}
         >
           🗑️ İlerlemeyi sıfırla

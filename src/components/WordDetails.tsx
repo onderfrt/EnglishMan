@@ -15,7 +15,8 @@ export function WordDetails({ word, note, editable }: { word: Word; note?: strin
       </div>
       <div className="word-meta">
         <span className={`pos-dot pos-${word.pos.replace(' ', '-')}`} />
-        {POS_TR[word.pos]} · {word.level}
+        {POS_TR[word.pos]}
+        {word.custom ? ' · kendi kelimen' : ` · ${word.level}`}
       </div>
       <div className="word-tr">{word.tr}</div>
       {word.synonyms && (
@@ -28,13 +29,17 @@ export function WordDetails({ word, note, editable }: { word: Word; note?: strin
           ))}
         </div>
       )}
-      <div className="example">
-        <div className="example-en">
-          <Highlighted sentence={word.example} word={word.en} />
-          <SpeakButton text={word.example} label="Cümleyi dinle" />
+      {(word.example || word.exampleTr) && (
+        <div className="example">
+          {word.example && (
+            <div className="example-en">
+              <Highlighted sentence={word.example} word={word.en} />
+              <SpeakButton text={word.example} label="Cümleyi dinle" />
+            </div>
+          )}
+          {word.exampleTr && <div className="example-tr">{word.exampleTr}</div>}
         </div>
-        <div className="example-tr">{word.exampleTr}</div>
-      </div>
+      )}
       {note && <div className="note-display">💭 {note}</div>}
     </div>
   );

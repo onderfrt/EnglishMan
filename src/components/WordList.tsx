@@ -8,12 +8,12 @@ import { WordDetails } from './WordDetails';
 
 type Filter = 'all' | 'new' | 'learning' | 'mastered';
 
-function status(card: CardState | undefined): Exclude<Filter, 'all'> {
+export function status(card: CardState | undefined): Exclude<Filter, 'all'> {
   if (!card) return 'new';
   return isMastered(card) ? 'mastered' : 'learning';
 }
 
-const STATUS_LABEL = { new: 'Yeni', learning: 'Öğreniliyor', mastered: 'Kalıcı' };
+export const STATUS_LABEL = { new: 'Yeni', learning: 'Öğreniliyor', mastered: 'Kalıcı' };
 
 export function WordList({ progress, now }: { progress: Progress; now: number }) {
   const [topic, setTopic] = useState<TopicId | 'all'>('all');

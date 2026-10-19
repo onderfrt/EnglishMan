@@ -1,4 +1,5 @@
-import { PACKS, WORDS, type Word } from '../data/words';
+import { PACKS, type Word } from '../data/words';
+import { allWords } from './catalog';
 import { shuffle, type Rng } from './random';
 
 /**
@@ -95,13 +96,13 @@ function distractorPool(word: Word, ok: (w: Word) => boolean, sameFormOnly = fal
   const base = (w: Word) => w.id !== word.id && !related(word, w) && ok(w);
   const tries = [
     PACKS.academic.words.filter((w) => base(w) && w.pos === word.pos),
-    WORDS.filter((w) => base(w) && w.pos === word.pos),
+    allWords().filter((w) => base(w) && w.pos === word.pos),
   ];
   if (!sameFormOnly) {
     const group = POS_GROUP[word.pos] ?? [word.pos];
     // Bağlaç/edat sorularında zarflardan yalnızca bağlaç görevi görenler (moreover, however...) şık olur.
     const linkerOnly = word.pos === 'conjunction' || word.pos === 'preposition';
-    tries.push(WORDS.filter((w) => base(w) && group.includes(w.pos) && (!linkerOnly || w.topic === 'argument')));
+    tries.push(allWords().filter((w) => base(w) && group.includes(w.pos) && (!linkerOnly || w.topic === 'argument')));
   }
   return tries.find((t) => t.length >= 4) ?? [];
 }

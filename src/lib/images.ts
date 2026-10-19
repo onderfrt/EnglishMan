@@ -71,3 +71,13 @@ export async function setUserImage(wordId: string, file: File): Promise<string |
     return 'Bu dosya açılamadı. Bir fotoğraf ya da resim seç.';
   }
 }
+
+/** Yedekleme için tüm kullanıcı görselleri. */
+export function allUserImages(): Record<string, string> {
+  return images;
+}
+
+/** Yedekten geri yükleme: mevcut görsellerle birleştirir. Başarısızsa (depolama dolu) false döner. */
+export function mergeUserImages(incoming: Record<string, string>): boolean {
+  return commit({ ...images, ...incoming });
+}

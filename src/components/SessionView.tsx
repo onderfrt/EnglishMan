@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { WORDS_BY_ID } from '../data/words';
+import { wordById } from '../lib/catalog';
 import type { TypedResult } from '../lib/answer';
 import { retryMode, type Step } from '../lib/session';
 import type { Progress } from '../lib/storage';
@@ -32,7 +32,7 @@ export function SessionView({ initialSteps, progress, onGrade, onNote, onExit }:
     return <Summary results={results} onExit={onExit} />;
   }
 
-  const word = WORDS_BY_ID[step.wordId];
+  const word = wordById(step.wordId)!;
   const next = () => setIndex((i) => i + 1);
 
   const handleAnswer = (result: TypedResult) => {
@@ -112,7 +112,7 @@ function Summary({ results, onExit }: { results: { wordId: string; result: Typed
           <div className="chips">
             {missed.map((id) => (
               <span key={id} className="chip">
-                <EmojiArt emoji={WORDS_BY_ID[id].emoji} className="chip-emoji" /> {WORDS_BY_ID[id].en} — {WORDS_BY_ID[id].tr}
+                <EmojiArt emoji={wordById(id)!.emoji} className="chip-emoji" /> {wordById(id)!.en} — {wordById(id)!.tr}
               </span>
             ))}
           </div>

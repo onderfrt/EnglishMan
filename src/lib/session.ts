@@ -1,4 +1,5 @@
-import { GOALS, LEVEL_ORDER, PACKS, WORDS, WORDS_BY_ID, type Level, type TopicId, type Word } from '../data/words';
+import { GOALS, LEVEL_ORDER, PACKS, WORDS, type Level, type TopicId, type Word } from '../data/words';
+import { allWords, customWords, wordById } from './catalog';
 import type { CardState } from './srs';
 import { clozeQuestion, synonymQuestion } from './exam';
 import { shuffle, type Rng } from './random';
@@ -55,7 +56,7 @@ const levelDistance = (a: Level, b: Level) => Math.abs(LEVEL_ORDER.indexOf(a) - 
  */
 export function choicesFor(word: Word, rng: Rng = Math.random, count = 4): Word[] {
   const others = shuffle(
-    WORDS.filter((w) => w.id !== word.id && w.tr !== word.tr && w.en !== word.en),
+    allWords().filter((w) => w.id !== word.id && w.tr !== word.tr && w.en !== word.en),
     rng,
   );
   const score = (w: Word) => (w.pos === word.pos ? 0 : 2) + Math.min(levelDistance(w.level, word.level), 2);
@@ -75,7 +76,7 @@ export function newWordsLeftToday(p: Progress, now: number): number {
 
 export function dueCards(p: Progress, now: number): CardState[] {
   return Object.values(p.cards)
-    .filter((c) => c.due <= now && WORDS_BY_ID[c.wordId])
+    .filter((c) => c.due <= now && wordById(c.wordId))
     .sort((a, b) => a.due - b.due);
 }
 
@@ -84,10 +85,12 @@ export function dueCards(p: Progress, now: number): CardState[] {
  * Genel İngilizce'de seçili seviyenin kelimeleri.
  */
 export function sourceWords(p: Progress): Word[] {
+  // Kullanıcının kendi eklediği kelimeler hedeften bağımsızdır ve öncelikli öğretilir.
+  const own = customWords();
   const pack = p.settings.goal && GOALS[p.settings.goal].pack;
-  if (pack) return PACKS[pack].words;
+  if (pack) return [...own, ...PACKS[pack].words];
   const level = p.settings.level;
-  return WORDS.filter((w) => !level || w.level === level);
+  return [...own, ...WORDS.filter((w) => !level || w.level === level)];
 }
 
 /** Kaynakta henüz çalışılmamış kelimeler. */
@@ -104,13 +107,13 @@ const CHUNK = 4;
 export function buildSession(p: Progress, now: number, opts: SessionOptions = {}, rng: Rng = Math.random): Step[] {
   const isExam = !!(p.settings.goal && GOALS[p.settings.goal].pack);
   const reviews = dueCards(p, now)
-    .filter((c) => !opts.topic || WORDS_BY_ID[c.wordId].topic === opts.topic)
+    .filter((c) => !opts.topic || wordById(c.wordId)!.topic === opts.topic)
     .slice(0, p.settings.maxReviewsPerSession);
 
   const steps: Step[] = shuffle(reviews, rng).map((c) => ({
     kind: 'quiz',
     wordId: c.wordId,
-    mode: modeFor(c, rng, WORDS_BY_ID[c.wordId], isExam),
+    mode: modeFor(c, rng, wordById(c.wordId), isExam),
     graded: true,
   }));
 

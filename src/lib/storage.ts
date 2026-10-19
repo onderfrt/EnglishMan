@@ -1,4 +1,4 @@
-import type { Goal, Level } from '../data/words';
+import type { Goal, Level, Word } from '../data/words';
 import type { CardState } from './srs';
 
 export interface Settings {
@@ -31,6 +31,8 @@ export interface Progress {
   cards: Record<string, CardState>;
   /** Kullanıcının kelime için yazdığı kendi çağrışımı / hafıza ipucu. */
   notes: Record<string, string>;
+  /** Kullanıcının kendi eklediği kelimeler. */
+  customWords: Word[];
   settings: Settings;
   /** Anahtar: YYYY-MM-DD (yerel tarih). */
   days: Record<string, DayLog>;
@@ -50,7 +52,7 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export function emptyProgress(): Progress {
-  return { version: 1, cards: {}, notes: {}, settings: { ...DEFAULT_SETTINGS }, days: {} };
+  return { version: 1, cards: {}, notes: {}, customWords: [], settings: { ...DEFAULT_SETTINGS }, days: {} };
 }
 
 export function parseProgress(raw: string): Progress {

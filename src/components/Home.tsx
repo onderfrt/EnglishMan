@@ -11,9 +11,10 @@ interface Props {
   onChangeGoal: () => void;
   onChangeLevel: () => void;
   onSetLevel: (level: Level) => void;
+  onOpenCustom: () => void;
 }
 
-export function Home({ progress, now, onStart, onChangeGoal, onChangeLevel, onSetLevel }: Props) {
+export function Home({ progress, now, onStart, onChangeGoal, onChangeLevel, onSetLevel, onOpenCustom }: Props) {
   const { goal, level, examDate, newPerDay } = progress.settings;
   const pack = goal ? GOALS[goal].pack : null;
   const sourceList = sourceWords(progress);
@@ -164,6 +165,19 @@ export function Home({ progress, now, onStart, onChangeGoal, onChangeLevel, onSe
           );
         })}
       </div>
+
+      <button className="card custom-cta" onClick={onOpenCustom}>
+        <EmojiArt emoji="✍️" className="topic-emoji" />
+        <span>
+          <b>{progress.customWords.length ? 'Kendi kelimelerim' : 'Kendi kelimelerini ekle'}</b>
+          <span className="muted small">
+            {progress.customWords.length
+              ? `${progress.customWords.length} kelime · yeni ekle ya da düzenle`
+              : 'Kitapta, dizide ya da deneme sınavında gördüğün kelimeleri ekle, birlikte çalışalım.'}
+          </span>
+        </span>
+        <span className="muted">›</span>
+      </button>
 
       <details className="card tips">
         <summary>Bu uygulama nasıl çalışıyor?</summary>
