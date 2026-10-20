@@ -10,6 +10,9 @@ import {
 } from '../lib/customWords';
 import { findInSentence } from '../lib/exam';
 import { removeUserImage } from '../lib/images';
+import { useBack } from '../lib/back';
+import { BackBar } from './BackBar';
+import { WordAutocomplete } from './WordAutocomplete';
 import { WordDetails } from './WordDetails';
 
 interface Props {
@@ -48,23 +51,38 @@ export function CustomWordForm({ word, level, onSave, onDelete, onCancel }: Prop
     onCancel();
   };
 
-  return (
-    <div className="custom-form">
-      <div className="card">
-        <h2>{word ? 'Kelimeyi düzenle' : 'Yeni kelime ekle'}</h2>
+  useBack(true, cancel);
 
-        <label className="field">
+  return (
+    <div className="viewer custom-form">
+      <BackBar title={word ? 'Kelimeyi düzenle' : 'Yeni kelime'} />
+      <div className="card">
+
+        <div className="field">
           <span>İngilizce kelime *</span>
-          <input
+          <WordAutocomplete
             value={input.en}
-            onChange={(e) => set({ en: e.target.value })}
-            placeholder="ör. abandon ya da give up"
-            autoCapitalize="off"
-            autoCorrect="off"
-            spellCheck={false}
-            className={tried && !preview.en ? 'invalid' : ''}
+            invalid={tried && !preview.en}
+            onChange={(en) => set({ en })}
+            onPick={(en, known) =>
+              // Uygulamada olan bir kelime seçildiyse boş alanları onun bilgileriyle doldur.
+              setInput((i) =>
+                known
+                  ? {
+                      ...i,
+                      en,
+                      tr: i.tr || known.tr,
+                      example: i.example || known.example,
+                      exampleTr: i.exampleTr || known.exampleTr,
+                      synonyms: i.synonyms || (known.synonyms ?? []).join(', '),
+                      pos: i.pos === 'other' ? known.pos : i.pos,
+                      emoji: i.emoji || known.emoji,
+                    }
+                  : { ...i, en },
+              )
+            }
           />
-        </label>
+        </div>
         {duplicate && (
           <p className="notice small">
             Bu kelime uygulamada zaten var{duplicate.custom ? ' (kendi kelimelerinde)' : ''}: “{duplicate.tr}”. Yine de

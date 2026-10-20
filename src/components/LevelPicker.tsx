@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LEVEL_ORDER, LEVELS, WORDS, type Level } from '../data/words';
 import type { Progress } from '../lib/storage';
+import { useBack } from '../lib/back';
 import { PlacementTest } from './PlacementTest';
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
 export function LevelPicker({ progress, onSelect, onCancel, onChangeGoal }: Props) {
   const [testing, setTesting] = useState(false);
   const current = progress.settings.level;
+  useBack(testing, () => setTesting(false));
 
   if (testing) {
     return <PlacementTest onDone={onSelect} onCancel={() => setTesting(false)} />;

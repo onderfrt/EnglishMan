@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { GOALS, LEVEL_ORDER, PACKS, TOPICS, WORDS, type Level, type PackId, type TopicId } from '../data/words';
-import { formatDue, isMastered, type CardState } from '../lib/srs';
+import { isMastered, type CardState } from '../lib/srs';
 import type { Progress } from '../lib/storage';
 import { EmojiArt } from './EmojiArt';
 import { SpeakButton } from './Speak';
-import { WordDetails } from './WordDetails';
+import { WordViewer } from './WordViewer';
 
 type Filter = 'all' | 'new' | 'learning' | 'mastered';
 
@@ -23,7 +23,7 @@ export function WordList({ progress, now }: { progress: Progress; now: number })
   const [source, setSource] = useState<Level | PackId | 'all'>(goalPack ?? progress.settings.level ?? 'all');
   const packIds = source in PACKS ? new Set(PACKS[source as PackId].words.map((w) => w.id)) : null;
   const [query, setQuery] = useState('');
-  const [open, setOpen] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<number | null>(null);
 
   const q = query.trim().toLowerCase();
   const list = WORDS.filter(
@@ -68,12 +68,12 @@ export function WordList({ progress, now }: { progress: Progress; now: number })
       </div>
       <p className="muted small">{list.length} kelime</p>
       <ul>
-        {list.map((w) => {
+        {list.map((w, i) => {
           const card = progress.cards[w.id];
           const st = status(card);
           return (
-            <li key={w.id} className="word-row">
-              <button className="word-row-main" onClick={() => setOpen(open === w.id ? null : w.id)}>
+            <li key={w.id} className="word-row" id={`row-${w.id}`}>
+              <button className="word-row-main" onClick={() => setViewing(i)}>
                 <EmojiArt emoji={w.emoji} className="row-emoji" />
                 <span className="row-text">
                   <b>{w.en}</b>
@@ -85,21 +85,24 @@ export function WordList({ progress, now }: { progress: Progress; now: number })
                 </span>
               </button>
               <SpeakButton text={w.en} />
-              {open === w.id && (
-                <div className="row-details">
-                  <WordDetails word={w} note={progress.notes[w.id]} editable />
-                  {card && (
-                    <p className="muted small center">
-                      Sonraki tekrar: {formatDue(card.due, now)} ·{' '}
-                      {card.lapses} kez unutuldu
-                    </p>
-                  )}
-                </div>
-              )}
             </li>
           );
         })}
       </ul>
+      {viewing !== null && list[viewing] && (
+        <WordViewer
+          words={list}
+          index={viewing}
+          progress={progress}
+          now={now}
+          onIndexChange={setViewing}
+          onClose={() => {
+            const id = list[viewing].id;
+            setViewing(null);
+            requestAnimationFrame(() => document.getElementById(`row-${id}`)?.scrollIntoView({ block: 'center' }));
+          }}
+        />
+      )}
     </div>
   );
 }

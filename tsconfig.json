@@ -14,5 +14,5 @@
     "allowImportingTsExtensions": true,
     "types": ["vite/client", "node"]
   },
-  "include": ["src", "vite.config.ts", "emoji-assets.ts"]
+  "include": ["src", "vite.config.ts", "emoji-assets.ts", "wordlist-asset.ts"]
 }

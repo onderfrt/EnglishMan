@@ -1,7 +1,9 @@
 import { useMemo, useRef, useState } from 'react';
 import type { Level, Word } from '../data/words';
 import { importTemplate, newCustomId, parseImport, toCustomWord } from '../lib/customWords';
+import { useBack } from '../lib/back';
 import { downloadText } from '../lib/download';
+import { BackBar } from './BackBar';
 
 interface Props {
   level: Level;
@@ -26,10 +28,12 @@ export function ImportWords({ level, onImport, onClose }: Props) {
     onImport(fresh.map((r) => toCustomWord(r.input, newCustomId(), level)));
   };
 
+  useBack(true, onClose);
+
   return (
-    <div className="import-words">
+    <div className="viewer import-words">
+      <BackBar title="Toplu kelime ekle" />
       <div className="card">
-        <h2>Toplu kelime ekle</h2>
         <p className="muted small">
           Her satıra bir kelime yaz. Alanları <b>noktalı virgül</b> ya da <b>sekme</b> ile ayır:
         </p>

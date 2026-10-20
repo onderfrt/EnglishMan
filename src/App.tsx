@@ -4,9 +4,11 @@ import { GoalPicker } from './components/GoalPicker';
 import { LevelPicker } from './components/LevelPicker';
 import { SessionView } from './components/SessionView';
 import { SettingsView } from './components/SettingsView';
+import { BackBar } from './components/BackBar';
 import { WordsTab, type WordsView } from './components/WordsTab';
 import { GOALS, type Goal, type Level, type Word } from './data/words';
 import type { TypedResult } from './lib/answer';
+import { useBack } from './lib/back';
 import { setCustomWords } from './lib/catalog';
 import { removeUserImage } from './lib/images';
 import { buildSession, type SessionOptions, type Step } from './lib/session';
@@ -99,6 +101,16 @@ export default function App() {
       return { ...p, notes };
     });
 
+  const endSession = () => {
+    setSession(null);
+    setNow(Date.now());
+  };
+
+  // Geri tuşu (ekrandaki ya da telefonunki): oturumdan, seçim ekranlarından ve sekmelerden ana sayfaya döner.
+  useBack(tab !== 'home', () => setTab('home'));
+  useBack(picking !== null, () => setPicking(null));
+  useBack(!!session, endSession);
+
   const setLevel = (level: Level) => {
     setProgress((p) => ({ ...p, settings: { ...p.settings, level } }));
     setPicking(null);
@@ -124,7 +136,7 @@ export default function App() {
   if (!goal || picking === 'goal') {
     return (
       <main className="app">
-        {header}
+        {goal ? <BackBar title="Hedef" /> : header}
         <GoalPicker
           current={goal}
           examDate={examDate}
@@ -138,7 +150,7 @@ export default function App() {
   if ((goal === 'general' && !level) || picking === 'level') {
     return (
       <main className="app">
-        {header}
+        {level ? <BackBar title="Seviye" /> : header}
         <LevelPicker
           progress={progress}
           onSelect={setLevel}
@@ -157,10 +169,7 @@ export default function App() {
           progress={progress}
           onGrade={grade}
           onNote={setNote}
-          onExit={() => {
-            setSession(null);
-            setNow(Date.now());
-          }}
+          onExit={endSession}
         />
       </main>
     );
@@ -168,7 +177,7 @@ export default function App() {
 
   return (
     <main className="app">
-      {header}
+      {tab === 'home' ? header : <BackBar title={tab === 'words' ? 'Kelimeler' : 'Ayarlar'} />}
       {tab === 'home' && (
         <Home
           progress={progress}

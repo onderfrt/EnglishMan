@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import type { Level, Word } from '../data/words';
 import { customWords } from '../lib/catalog';
-import { formatDue } from '../lib/srs';
 import type { Progress } from '../lib/storage';
 import { CustomWordForm } from './CustomWordForm';
 import { EmojiArt } from './EmojiArt';
 import { ImportWords } from './ImportWords';
 import { SpeakButton } from './Speak';
-import { WordDetails } from './WordDetails';
+import { WordViewer } from './WordViewer';
 import { STATUS_LABEL, status } from './WordList';
 
 interface Props {
@@ -24,7 +23,7 @@ type Mode = { kind: 'list' } | { kind: 'edit'; word?: Word } | { kind: 'import' 
 /** Kullanıcının kendi eklediği kelimeler: listele, ekle, düzenle, sil, toplu içe aktar. */
 export function CustomWords({ progress, now, level, onSave, onDelete, onImport }: Props) {
   const [mode, setMode] = useState<Mode>({ kind: 'list' });
-  const [open, setOpen] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<number | null>(null);
   const [query, setQuery] = useState('');
   const [message, setMessage] = useState('');
   const words = customWords();
@@ -38,7 +37,6 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport }
         onSave={(w) => {
           onSave(w);
           setMessage(mode.word ? `✅ “${w.en}” güncellendi.` : `✅ “${w.en}” eklendi. Bir sonraki oturumda karşına çıkacak.`);
-          setOpen(w.id);
           setMode({ kind: 'list' });
         }}
         onDelete={
@@ -107,12 +105,12 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport }
           )}
           <p className="muted small">{words.length} kelime</p>
           <ul>
-            {list.map((w) => {
+            {list.map((w, i) => {
               const card = progress.cards[w.id];
               const st = status(card);
               return (
-                <li key={w.id} className="word-row">
-                  <button className="word-row-main" onClick={() => setOpen(open === w.id ? null : w.id)}>
+                <li key={w.id} className="word-row" id={`row-${w.id}`}>
+                  <button className="word-row-main" onClick={() => setViewing(i)}>
                     <EmojiArt emoji={w.emoji} className="row-emoji" />
                     <span className="row-text">
                       <b>{w.en}</b>
@@ -124,17 +122,33 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport }
                   <button className="icon-btn" aria-label={`Düzenle: ${w.en}`} title="Düzenle" onClick={() => setMode({ kind: 'edit', word: w })}>
                     ✏️
                   </button>
-                  {open === w.id && (
-                    <div className="row-details">
-                      <WordDetails word={w} note={progress.notes[w.id]} editable />
-                      {card && <p className="muted small center">Sonraki tekrar: {formatDue(card.due, now)}</p>}
-                    </div>
-                  )}
                 </li>
               );
             })}
           </ul>
         </>
+      )}
+      {viewing !== null && list[viewing] && (
+        <WordViewer
+          words={list}
+          index={viewing}
+          progress={progress}
+          now={now}
+          onIndexChange={setViewing}
+          onClose={() => setViewing(null)}
+          actions={(w) => (
+            <button
+              className="icon-btn"
+              title="Düzenle"
+              onClick={() => {
+                setViewing(null);
+                setMode({ kind: 'edit', word: w });
+              }}
+            >
+              ✏️ Düzenle
+            </button>
+          )}
+        />
       )}
     </div>
   );

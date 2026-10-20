@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { GOALS, type Goal } from '../data/words';
+import { useBack } from '../lib/back';
 import { dayKey } from '../lib/storage';
 import { EmojiArt } from './EmojiArt';
 
@@ -16,6 +17,7 @@ const ORDER: Goal[] = ['yds', 'yokdil', 'ielts', 'general'];
 export function GoalPicker({ current, examDate, onSelect, onCancel }: Props) {
   const [exam, setExam] = useState<Goal | null>(null);
   const [date, setDate] = useState(examDate ?? '');
+  useBack(!!exam, () => setExam(null));
 
   if (exam) {
     return (

@@ -34,6 +34,8 @@ uygulama seni bir sonraki seviyeye davet eder. Seviyeyi ana sayfadaki seviye kar
 
 **Kelimeler → ✍️ Kelimelerim** bölümünden kendi kelimelerini ekleyebilirsin:
 
+- **Öneriler:** Kelimeyi yazmaya başlayınca (ör. `im` → *important, image, improve…*) öneriler çıkar. Uygulamada zaten
+  olan bir kelime seçilirse anlamı, örnek cümlesi ve eş anlamlıları otomatik dolar.
 - **Tek tek:** İngilizce kelime ve Türkçe anlam zorunlu; örnek cümle, çevirisi, kelime türü, eş anlamlılar, emoji ve
   kendi fotoğrafın isteğe bağlı. Yazarken kartın önizlemesi görünür. Kelimeler sonradan düzenlenebilir ve silinebilir.
 - **Toplu:** Metni yapıştır ya da `.csv` / `.txt` dosyası yükle. Her satır bir kelime:
@@ -43,6 +45,13 @@ uygulama seni bir sonraki seviyeye davet eder. Seviyeyi ana sayfadaki seviye kar
 - Kendi kelimelerin, hedefin ne olursa olsun yeni kelimeler arasında **önce** öğretilir ve aynı soru tipleriyle sorulur
   (örnek cümle varsa boşluk doldurma, en az iki eş anlamlı varsa eş anlamlı sorusu).
 - Yedek dosyası kendi kelimelerini ve eklediğin fotoğrafları da içerir.
+
+## Gezinme
+
+- Ana sayfa dışındaki her ekranda üstte **← Geri** düğmesi var. Telefonun kendi geri tuşu / geri kaydırma hareketi de
+  uygulamadan çıkmak yerine bir önceki ekrana döner.
+- Kelime listesinde bir kelimeye dokununca tam ekran açılır; **‹ Önceki / Sonraki ›** düğmeleri, sağa-sola kaydırma ve
+  klavyede **← →** tuşlarıyla kelimeler arasında gezinilir.
 
 ## Çalıştırma
 
@@ -74,6 +83,9 @@ src/
   lib/catalog.ts       Hazır kelimeler + kullanıcının kendi kelimeleri (tüm uygulama buradan okur)
   lib/customWords.ts   Kendi kelime oluşturma, toplu içe aktarma ayrıştırıcısı, Excel şablonu
   lib/backup.ts        Yedek dosyası (ilerleme + kendi kelimeler + görseller)
+  lib/back.ts          Geri yığını: ekrandaki Geri düğmesi ve telefonun geri tuşu
+  lib/suggest.ts       Kelime ekleme önerileri
+wordlist-asset.ts      Öneriler için İngilizce kelime listesini (SCOWL) public/wordlist.txt olarak üretir
   lib/speech.ts        Sesli okuma (tarayıcının Text-to-Speech'i)
   lib/images.ts        Kullanıcının kelimelere eklediği kendi görselleri
 emoji-assets.ts        Derlemede kullanılan 3D emoji görsellerini public/emoji/ altına kopyalar
@@ -82,6 +94,9 @@ emoji-assets.ts        Derlemede kullanılan 3D emoji görsellerini public/emoji
 
 Yeni kelime eklemek için ilgili seviye dosyasına (ör. `src/data/b1.ts`) bir satır eklemen yeterli.
 `npm test`, kullanılan her emojinin 3D görselinin bulunduğunu kontrol eder.
+
+Kelime önerileri: [SCOWL](http://wordlist.aspell.net/) (Kevin Atkinson; serbest lisans, telif notu
+`public/wordlist.txt` başında), [wordlist-english](https://www.npmjs.com/package/wordlist-english) paketi üzerinden.
 
 Görseller: [Microsoft Fluent Emoji 3D](https://github.com/microsoft/fluentui-emoji) (MIT lisansı),
 [@lobehub/fluent-emoji-3d](https://www.npmjs.com/package/@lobehub/fluent-emoji-3d) paketi üzerinden.
