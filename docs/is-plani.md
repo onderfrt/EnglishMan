@@ -134,6 +134,12 @@ Quizlet, Anki). Kullanıcı kendi kaynağındaki (deneme sınavı, kitap, dizi) 
 sorularla çalışabiliyor. **Premium adayı:** ücretsiz sürümde sınırlı sayıda (ör. 50) kendi kelime, premium'da sınırsız
 ve cihazlar arası senkronizasyon.
 
+**Anlamı otomatik doldurma (karar: önce sözlük, sonra yapay zekâ):**
+- ✅ Ücretsiz katman: KeNet + WordNet'ten üretilmiş İngilizce→Türkçe öneri sözlüğü (~18.500 kelime). Maliyeti yok,
+  internetsiz çalışır; eşleştirme otomatik olduğu için anlamlar tıklanabilir öneri olarak gösterilir.
+- ⏳ Premium katman: yapay zekâ ile anlam + örnek cümle + çeviri. Bir sunucu (API anahtarı tarayıcıda tutulamaz),
+  kullanıcı hesabı ve kullanım sınırı gerektirir; bu yüzden hesap/senkronizasyon (7–8. hafta) ile birlikte yapılır.
+
 ## 10. Faz 1 — Sınav odaklı MVP (yaklaşık 8–10 hafta)
 
 **Hedef:** YDS/YÖKDİL ve IELTS hazırlananların her gün açmak isteyeceği bir kelime uygulaması ve 20–50 kişilik beta.

@@ -11,7 +11,7 @@ import type { Plugin } from 'vite';
 const SOURCE = path.resolve('node_modules/wordlist-english');
 const LEVELS = ['10', '20', '35'];
 
-/** "images" → "image", "stopped" → "stop" gibi: kelime, listedeki başka bir kelimenin çekimli/türemiş biçimi mi? */
+/** "images" → "image", "stopped" → "stop" gibi: kelime, listedeki başka bir kelimenin çekimli biçimi mi? */
 function isInflection(w: string, all: Set<string>): boolean {
   const bases: string[] = [];
   if (w.endsWith('s')) bases.push(w.slice(0, -1));
@@ -20,9 +20,6 @@ function isInflection(w: string, all: Set<string>): boolean {
   if (w.endsWith('ed')) bases.push(w.slice(0, -1), w.slice(0, -2));
   if (w.endsWith('ied')) bases.push(w.slice(0, -3) + 'y');
   if (w.endsWith('ing')) bases.push(w.slice(0, -3), w.slice(0, -3) + 'e');
-  // Kökü listede olan -ly zarfları (immediately → immediate) öneri listesini kalabalıklaştırır.
-  if (w.endsWith('ly')) bases.push(w.slice(0, -2));
-  if (w.endsWith('ily')) bases.push(w.slice(0, -3) + 'y');
   // Son ünsüzü ikilenenler: stopped, stopping
   if (/([b-df-hj-np-tv-z])\1(ed|ing)$/.test(w)) bases.push(w.replace(/([b-df-hj-np-tv-z])\1(ed|ing)$/, '$1'));
   return bases.some((b) => b.length > 1 && all.has(b));

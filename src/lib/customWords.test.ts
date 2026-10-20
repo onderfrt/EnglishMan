@@ -49,3 +49,12 @@ describe('custom words', () => {
     expect(steps[0]).toMatchObject({ kind: 'learn', wordId: 'custom:a' });
   });
 });
+
+describe('parseImport with dictionary', () => {
+  it('fills missing meanings from the dictionary and marks them', () => {
+    const rows = parseImport('serendipitous\nzeal ; şevk\nqwertyuiop', (en) => (en === 'serendipitous' ? 'rastlantısal' : ''));
+    expect(rows[0]).toMatchObject({ status: 'new', autoMeaning: true, input: { tr: 'rastlantısal' } });
+    expect(rows[1].autoMeaning).toBeUndefined();
+    expect(rows[2].status).toBe('invalid');
+  });
+});

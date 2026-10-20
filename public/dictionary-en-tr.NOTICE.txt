@@ -1,0 +1,17 @@
+dictionary-en-tr.json — EnglishMan İngilizce→Türkçe öneri sözlüğü
+
+Bu dosya aşağıdaki kaynaklardan otomatik üretilmiştir (scripts/build-dictionary.mjs):
+
+1) KeNet — Türkçe WordNet
+   Starlang Yazılım Danışmanlık / Olcay Taner Yıldız ve katkıda bulunanlar.
+   nlptoolkit-wordnet@1.0.7 npm paketi, ISC lisansı.
+   https://github.com/StarlangSoftware/TurkishWordNet
+
+2) Princeton WordNet 3.1
+   WordNet 3.1 Copyright 2011 by Princeton University. All rights reserved.
+   Lisans: https://wordnet.princeton.edu/license-and-commercial-use
+
+3) Karşılıkların sıralanmasında (çıktıya dahil edilmeden) Türkçe kelime sıklığı:
+   OpenSubtitles 2024 / OPUS, @zxcvbn-ts/language-tr@4.1.1 npm paketi, MIT lisansı.
+
+Anlamlar otomatik eşleştirmedir ve hatalı olabilir; uygulamada yalnızca öneri olarak gösterilir.

@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Level, Word } from '../data/words';
 import { importTemplate, newCustomId, parseImport, toCustomWord } from '../lib/customWords';
 import { useBack } from '../lib/back';
+import { bestMeaning, loadDictionary, lookup } from '../lib/dictionary';
 import { downloadText } from '../lib/download';
 import { BackBar } from './BackBar';
 
@@ -21,7 +22,12 @@ const STATUS = {
 export function ImportWords({ level, onImport, onClose }: Props) {
   const [text, setText] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
-  const rows = useMemo(() => parseImport(text), [text]);
+  const [dict, setDict] = useState<Record<string, string> | null>(null);
+  useEffect(() => {
+    loadDictionary().then(setDict);
+  }, []);
+  // Yalnızca İngilizce kelime yazılan satırlarda anlam sözlükten önerilir.
+  const rows = useMemo(() => parseImport(text, (en) => bestMeaning(lookup(en, dict))), [text, dict]);
   const fresh = rows.filter((r) => r.status === 'new');
 
   const add = () => {
@@ -40,6 +46,7 @@ export function ImportWords({ level, onImport, onClose }: Props) {
         <pre className="format">kelime ; anlam ; örnek cümle ; cümlenin çevirisi</pre>
         <ul className="muted small format-tips">
           <li>Yalnızca kelime ve anlam da yeterli: <code>abandon - terk etmek</code></li>
+          <li>Yalnızca İngilizce kelime yazarsan anlamı sözlükten önerilir; eklemeden önce önizlemede kontrol et.</li>
           <li>Excel ya da Google E-Tablolar'dan sütunları kopyalayıp yapıştırabilirsin.</li>
           <li>Quizlet ve Anki'den dışa aktardığın listeler de çalışır.</li>
         </ul>
@@ -87,7 +94,10 @@ export function ImportWords({ level, onImport, onClose }: Props) {
               <li key={r.line}>
                 <span className="row-text">
                   <b>{r.input.en || '—'}</b>
-                  <span className="muted">{r.input.tr || 'anlam yok'}</span>
+                  <span className="muted">
+                    {r.input.tr || 'anlam yok'}
+                    {r.autoMeaning && <span className="sugg-tag"> · 📖 sözlükten</span>}
+                  </span>
                   {r.input.example && <span className="muted small">“{r.input.example}”</span>}
                   {r.status === 'duplicate' && r.existing && (
                     <span className="muted small">Uygulamadaki anlamı: {r.existing.tr}</span>

@@ -74,6 +74,8 @@ export interface ImportRow {
   status: 'new' | 'duplicate' | 'invalid';
   /** Kopya ise uygulamada var olan kelime. */
   existing?: Word;
+  /** Anlam satırda yoktu, sözlükten önerildi. */
+  autoMeaning?: boolean;
 }
 
 /** "a,b,"c, d"" gibi tırnaklı CSV satırını ayırır. */
@@ -119,7 +121,10 @@ export function splitLine(line: string): string[] {
 
 const HEADER = /^(word|kelime|ingilizce|english|term)\b/i;
 
-export function parseImport(text: string): ImportRow[] {
+/**
+ * @param meaningFor Anlamı boş satırlar için sözlük önerisi (yalnızca İngilizce kelimelerden oluşan listeler için).
+ */
+export function parseImport(text: string, meaningFor?: (en: string) => string): ImportRow[] {
   const seen = new Set<string>();
   const rows: ImportRow[] = [];
   text
@@ -127,14 +132,16 @@ export function parseImport(text: string): ImportRow[] {
     .split(/\r?\n/)
     .forEach((raw, i) => {
       if (!raw.trim()) return;
-      const [en = '', tr = '', example = '', exampleTr = ''] = splitLine(raw).map(clean);
+      const [en = '', given = '', example = '', exampleTr = ''] = splitLine(raw).map(clean);
       if (i === 0 && HEADER.test(en)) return; // Başlık satırı
+      const auto = !given && en && meaningFor ? meaningFor(en) : '';
+      const tr = given || auto;
       const input: CustomWordInput = { ...EMPTY_INPUT, en, tr, example, exampleTr };
       const key = en.toLowerCase();
       const existing = findDuplicate(en);
       const status = !en || !tr ? 'invalid' : existing || seen.has(key) ? 'duplicate' : 'new';
       if (status === 'new') seen.add(key);
-      rows.push({ line: i + 1, input, status, existing });
+      rows.push({ line: i + 1, input, status, existing, ...(auto && { autoMeaning: true }) });
     });
   return rows;
 }

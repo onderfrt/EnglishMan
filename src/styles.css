@@ -1207,3 +1207,34 @@ select {
   color: var(--primary);
   white-space: nowrap;
 }
+
+/* Sözlük önerileri */
+.dict-hints {
+  margin: -4px 0 14px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--primary-soft);
+}
+.dict-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.dict-pos {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  min-width: 44px;
+}
+.dict-hints .chip {
+  cursor: pointer;
+  color: inherit;
+  background: var(--surface);
+}
+.dict-hints .chip-on {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}

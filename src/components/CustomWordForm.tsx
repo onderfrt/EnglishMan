@@ -12,6 +12,7 @@ import { findInSentence } from '../lib/exam';
 import { removeUserImage } from '../lib/images';
 import { useBack } from '../lib/back';
 import { BackBar } from './BackBar';
+import { DictionaryHints } from './DictionaryHints';
 import { WordAutocomplete } from './WordAutocomplete';
 import { WordDetails } from './WordDetails';
 
@@ -99,6 +100,18 @@ export function CustomWordForm({ word, level, onSave, onDelete, onCancel }: Prop
             className={tried && !preview.tr ? 'invalid' : ''}
           />
         </label>
+        <DictionaryHints
+          en={input.en}
+          tr={input.tr}
+          onToggle={(meaning, pos) =>
+            setInput((i) => {
+              const list = i.tr.split(',').map((x) => x.trim()).filter(Boolean);
+              const has = list.some((x) => x.toLocaleLowerCase('tr') === meaning.toLocaleLowerCase('tr'));
+              const next = has ? list.filter((x) => x.toLocaleLowerCase('tr') !== meaning.toLocaleLowerCase('tr')) : [...list, meaning];
+              return { ...i, tr: next.join(', '), pos: i.pos === 'other' && !has ? pos : i.pos };
+            })
+          }
+        />
 
         <label className="field">
           <span>Örnek cümle</span>

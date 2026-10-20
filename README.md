@@ -36,6 +36,10 @@ uygulama seni bir sonraki seviyeye davet eder. Seviyeyi ana sayfadaki seviye kar
 
 - **Öneriler:** Kelimeyi yazmaya başlayınca (ör. `im` → *important, image, improve…*) öneriler çıkar. Uygulamada zaten
   olan bir kelime seçilirse anlamı, örnek cümlesi ve eş anlamlıları otomatik dolar.
+- **Sözlük önerileri:** İngilizce kelimeyi yazınca Türkçe anlam alanının altında türüne göre gruplanmış öneriler çıkar
+  (ör. *table* → isim: masa, tablo · fiil: ertelemek). Dokunarak eklenir, tekrar dokununca çıkar. Toplu eklemede
+  yalnızca İngilizce kelime yazılan satırların anlamı da sözlükten önerilir. Öneriler otomatik eşleştirmedir; kontrol
+  edilmelidir.
 - **Tek tek:** İngilizce kelime ve Türkçe anlam zorunlu; örnek cümle, çevirisi, kelime türü, eş anlamlılar, emoji ve
   kendi fotoğrafın isteğe bağlı. Yazarken kartın önizlemesi görünür. Kelimeler sonradan düzenlenebilir ve silinebilir.
 - **Toplu:** Metni yapıştır ya da `.csv` / `.txt` dosyası yükle. Her satır bir kelime:
@@ -85,6 +89,8 @@ src/
   lib/backup.ts        Yedek dosyası (ilerleme + kendi kelimeler + görseller)
   lib/back.ts          Geri yığını: ekrandaki Geri düğmesi ve telefonun geri tuşu
   lib/suggest.ts       Kelime ekleme önerileri
+  lib/dictionary.ts    İngilizce→Türkçe öneri sözlüğü
+scripts/build-dictionary.mjs  İngilizce→Türkçe öneri sözlüğünü üretir (public/dictionary-en-tr.json)
 wordlist-asset.ts      Öneriler için İngilizce kelime listesini (SCOWL) public/wordlist.txt olarak üretir
   lib/speech.ts        Sesli okuma (tarayıcının Text-to-Speech'i)
   lib/images.ts        Kullanıcının kelimelere eklediği kendi görselleri
@@ -94,6 +100,10 @@ emoji-assets.ts        Derlemede kullanılan 3D emoji görsellerini public/emoji
 
 Yeni kelime eklemek için ilgili seviye dosyasına (ör. `src/data/b1.ts`) bir satır eklemen yeterli.
 `npm test`, kullanılan her emojinin 3D görselinin bulunduğunu kontrol eder.
+
+İngilizce→Türkçe öneri sözlüğü: [KeNet Türkçe WordNet](https://github.com/StarlangSoftware/TurkishWordNet)
+(ISC) ve Princeton WordNet 3.1'den `scripts/build-dictionary.mjs` ile üretilir; karşılıklar OpenSubtitles Türkçe kelime
+sıklığına göre sıralanır. Ayrıntılar: `public/dictionary-en-tr.NOTICE.txt`.
 
 Kelime önerileri: [SCOWL](http://wordlist.aspell.net/) (Kevin Atkinson; serbest lisans, telif notu
 `public/wordlist.txt` başında), [wordlist-english](https://www.npmjs.com/package/wordlist-english) paketi üzerinden.
@@ -112,6 +122,8 @@ Gelir modeli ve ürünleştirme planı: [docs/is-plani.md](docs/is-plani.md)
 - [x] 3D görseller, görsel sahneler, tür renk kodu, kendi görselini ekleme
 - [x] Kendi kelimeni ekleme, düzenleme, toplu içe aktarma (CSV / Excel / Quizlet / Anki)
 - [ ] Kelime listesini büyütmek
+- [x] Kendi kelimelerde sözlükten Türkçe anlam önerisi
+- [ ] Yapay zekâ ile anlam, örnek cümle ve çeviri doldurma (premium adayı)
 - [ ] Yapay zekâ ile üretilmiş, kelimeye özel çağrışım resimleri
 - [ ] Cümle tamamlama (boşluk doldurma) soruları
 - [ ] **Reading:** seviyeye uygun kısa metinler, bilinmeyen kelimeye dokununca anlam + listeye ekleme
