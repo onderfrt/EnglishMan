@@ -12,7 +12,7 @@
   Sınav tarihini girersen ana sayfada kalan gün ve paketi bitirmek için günde kaç yeni kelime gerektiği görünür.
 - **Genel İngilizce:** Seviyeni seçersin ya da 2 dakikalık seviye testini yaparsın. Testte her seviyeden 5 kelime sorulur,
 4 ve üzeri doğru yaparsan bir üst seviyeye geçersin. Yeni kelimeler seçtiğin seviyeden gelir. Bir seviye bitince
-uygulama seni bir sonraki seviyeye davet eder. Seviyeyi ana sayfadaki seviye kartından ya da Ayarlar'dan değiştirebilirsin.
+uygulama seni bir sonraki seviyeye davet eder. Seviyeyi ana sayfadaki seviye kartından ya da Profil'den değiştirebilirsin.
 
 ## Hangi öğrenme teknikleri kullanılıyor?
 
@@ -54,7 +54,7 @@ uygulama seni bir sonraki seviyeye davet eder. Seviyeyi ana sayfadaki seviye kar
 
 ## Hesap ve cihazlar arası eşitleme
 
-İstersen hesap oluşturup telefonda ve bilgisayarda aynı verilerle çalışabilirsin (Ayarlar → ☁️ Hesap, ya da ilk
+İstersen hesap oluşturup telefonda ve bilgisayarda aynı verilerle çalışabilirsin (Profil → ☁️ Hesap, ya da ilk
 açılışta "Zaten hesabım var"). Hesap açınca o cihazdaki ilerlemen hesaba taşınır; değişiklikler otomatik eşitlenir.
 Hesap olmadan da uygulama tamamen çalışır. Sunucu kurulumu: [docs/hesap-kurulumu.md](docs/hesap-kurulumu.md).
 
@@ -78,7 +78,7 @@ Telefonda kullanmak için GitHub Pages: repo **Settings → Pages → Source: Gi
 `main` dalına her push'ta uygulama `https://<kullanıcı-adı>.github.io/EnglishMan/` adresinde yayınlanır.
 Telefonda açıp tarayıcı menüsünden **"Ana ekrana ekle"** dersen uygulama gibi çalışır.
 
-İlerleme tarayıcının yerel deposunda (localStorage) tutulur. Ayarlar ekranından yedeği dışa/içe aktarabilirsin.
+İlerleme tarayıcının yerel deposunda (localStorage) tutulur. Profil ekranından yedeği dışa/içe aktarabilirsin.
 
 ## Proje yapısı
 

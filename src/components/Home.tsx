@@ -1,21 +1,55 @@
-import { GOALS, LEVELS, PACKS, TOPICS, type Level, type TopicId } from '../data/words';
+import { useState, type FormEvent } from 'react';
+import { GOALS, LEVELS, PACKS, type Level } from '../data/words';
+import { customWords } from '../lib/catalog';
 import { dueCards, newWordsLeftToday, nextLevel, sourceWords, unseenWords, type SessionOptions } from '../lib/session';
 import { isMastered } from '../lib/srs';
 import { dayKey, daysUntil, streak, type Progress } from '../lib/storage';
 import { EmojiArt } from './EmojiArt';
+import { TopicGrid } from './Practice';
+import { STATUS_LABEL, status } from './WordList';
 
 interface Props {
   progress: Progress;
   now: number;
+  /** Başlıktaki yuvarlak profil düğmesinde gösterilecek harf (hesap yoksa 👤). */
+  initial: string | null;
   onStart: (opts: SessionOptions) => void;
   onChangeGoal: () => void;
   onChangeLevel: () => void;
   onSetLevel: (level: Level) => void;
   onOpenCustom: () => void;
+  onQuickAdd: (en: string) => void;
+  onOpenPractice: () => void;
+  onOpenProfile: () => void;
 }
 
-export function Home({ progress, now, onStart, onChangeGoal, onChangeLevel, onSetLevel, onOpenCustom }: Props) {
+const WEEKDAYS = ['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pz'];
+
+function greeting(now: number): string {
+  const h = new Date(now).getHours();
+  if (h >= 5 && h < 12) return 'Günaydın';
+  if (h >= 12 && h < 18) return 'İyi günler';
+  return 'İyi akşamlar';
+}
+
+/** Bu haftanın (Pazartesi–Pazar) günleri: çalışıldı mı, bugün mü, henüz gelmedi mi? */
+function thisWeek(progress: Progress, now: number) {
+  const d = new Date(now);
+  d.setHours(12, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  const today = dayKey(now);
+  return WEEKDAYS.map((label) => {
+    const key = dayKey(d.getTime());
+    const future = d.getTime() > now && key !== today;
+    d.setDate(d.getDate() + 1);
+    return { label, key, done: !!progress.days[key]?.reviews, today: key === today, future };
+  });
+}
+
+export function Home(props: Props) {
+  const { progress, now, initial, onStart, onChangeGoal, onChangeLevel, onSetLevel, onOpenCustom, onQuickAdd } = props;
   const { goal, level, examDate, newPerDay } = progress.settings;
+  const [draft, setDraft] = useState('');
   const pack = goal ? GOALS[goal].pack : null;
   const sourceList = sourceWords(progress);
   const sourceLeft = unseenWords(progress).length;
@@ -27,205 +61,177 @@ export function Home({ progress, now, onStart, onChangeGoal, onChangeLevel, onSe
   // Paketi sınava kadar bitirmek için günde kaç yeni kelime gerekir?
   const perDayNeeded = examDays ? Math.ceil(sourceLeft / examDays) : null;
   const due = dueCards(progress, now).length;
-  const newLeft = Math.min(newWordsLeftToday(progress, now), unseenWords(progress).length);
+  const newLeft = Math.min(newWordsLeftToday(progress, now), sourceLeft);
   const cards = Object.values(progress.cards);
-  const learned = cards.length;
   const mastered = cards.filter(isMastered).length;
   const today = progress.days[dayKey(now)];
+  const learnedToday = today?.newLearned ?? 0;
   const days = streak(progress.days, now);
-  const hasWork = due + newLeft > 0;
+  const total = due + newLeft;
+  // Kelime başına ortalama ~20 saniye
+  const minutes = Math.max(1, Math.round(total / 3));
+  const own = customWords();
+  const recent = own.slice(-3).reverse();
+  const dateLabel = new Date(now).toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  const quickAdd = (e: FormEvent) => {
+    e.preventDefault();
+    onQuickAdd(draft.trim());
+    setDraft('');
+  };
 
   return (
     <div className="home">
-      {pack && goal ? (
-        <button className="level-banner" onClick={onChangeGoal}>
-          <span className="goal-icon">
-            <EmojiArt emoji={GOALS[goal].emoji} />
-          </span>
-          <span className="level-text">
-            <b>
-              {GOALS[goal].name} · {PACKS[pack].name}
-            </b>
-            <span className="topic-bar">
-              <span style={{ width: `${(packDone / packList.length) * 100}%` }} />
+      <header className="home-head">
+        <div>
+          <p className="muted small home-date">{dateLabel}</p>
+          <h1>{greeting(now)}</h1>
+        </div>
+        <div className="home-head-actions">
+          {goal && (
+            <button className="pill" onClick={pack ? onChangeGoal : onChangeLevel} title={pack ? 'Hedefi değiştir' : 'Seviyeyi değiştir'}>
+              <EmojiArt emoji={GOALS[goal].emoji} /> {pack ? GOALS[goal].name : level}
+            </button>
+          )}
+          <button className="avatar" onClick={props.onOpenProfile} aria-label="Profil">
+            {initial ?? '👤'}
+          </button>
+        </div>
+      </header>
+
+      <section className="card goal-card">
+        <div className="goal-card-top">
+          <span className="goal-card-title">Günlük hedef</span>
+          {days > 0 && <span className="streak-chip">🔥 {days} gün seri</span>}
+        </div>
+        <p className="goal-count">
+          <b>{Math.min(learnedToday, newPerDay)}</b> / {newPerDay} yeni kelime
+        </p>
+        <div className="meter">
+          <span style={{ width: `${Math.min(1, learnedToday / newPerDay) * 100}%` }} />
+        </div>
+        <div className="week" aria-label="Bu hafta">
+          {thisWeek(progress, now).map((d) => (
+            <span key={d.key} className={`week-day${d.done ? ' done' : ''}${d.today ? ' today' : ''}${d.future ? ' future' : ''}`}>
+              <i>{d.done ? '✓' : ''}</i>
+              {d.label}
             </span>
-            {examDays !== null && (
-              <span className="small">
-                {examDays === 0 ? '🎯 Sınav bugün, başarılar!' : `⏳ Sınava ${examDays} gün`}
-                {perDayNeeded ? ` · paketi bitirmek için günde ~${perDayNeeded} yeni kelime` : ''}
-              </span>
-            )}
+          ))}
+        </div>
+        <button className="goal-pack" onClick={pack ? onChangeGoal : onChangeLevel}>
+          <span>
+            {pack ? PACKS[pack].name : level ? `${level} · ${LEVELS[level].name}` : ''}
+            {examDays !== null && (examDays === 0 ? ' · 🎯 Sınav bugün!' : ` · ⏳ Sınava ${examDays} gün`)}
           </span>
-          <span className="muted small">
-            {packDone}/{packList.length} · Değiştir ▾
+          <span className="muted">
+            {packDone}/{packList.length} ›
           </span>
         </button>
-      ) : (
-        level && (
-          <>
-            <button className="goal-chip" onClick={onChangeGoal}>
-              <EmojiArt emoji={GOALS.general.emoji} />
-              <span>
-                Hedef: <b>{GOALS.general.name}</b>
-              </span>
-              <span className="muted small">YDS, YÖKDİL, IELTS · Değiştir ▾</span>
-            </button>
-            <button className="level-banner" onClick={onChangeLevel}>
-              <span className={`level-code lvl-${level}`}>{level}</span>
-              <span className="level-text">
-                <b>{LEVELS[level].name}</b>
-                <span className="topic-bar">
-                  <span style={{ width: `${(packDone / packList.length) * 100}%` }} />
-                </span>
-              </span>
-              <span className="muted small">
-                {packDone}/{packList.length} · Değiştir ▾
-              </span>
-            </button>
-          </>
-        )
-      )}
+      </section>
       {perDayNeeded !== null && perDayNeeded > newPerDay && (
         <p className="notice small">
-          Günlük yeni kelime ayarın ({newPerDay}) sınava kadar paketi bitirmeye yetmiyor. Ayarlar'dan artırabilirsin.
+          Paketi sınava kadar bitirmek için günde ~{perDayNeeded} yeni kelime gerekiyor; ayarın {newPerDay}. Profil'den
+          artırabilirsin.
         </p>
       )}
 
-      <div className="stats">
-        <Stat value={`${days}🔥`} label="gün seri" />
-        <Stat value={learned} label="öğrenilen" />
-        <Stat value={mastered} label="kalıcı" />
-        <Stat value={today?.reviews ?? 0} label="bugün tekrar" />
-      </div>
-
-      <div className="card hero">
-        {hasWork ? (
+      <section className="card review-card">
+        {total > 0 ? (
           <>
-            <h2>Bugünün çalışması</h2>
+            <span className="review-kicker">Bugünün çalışması</span>
+            <h2>{total} kelime seni bekliyor</h2>
             <p>
-              {due > 0 && (
-                <span>
-                  <b>{due}</b> tekrar
-                </span>
-              )}
-              {due > 0 && newLeft > 0 && ' + '}
-              {newLeft > 0 && (
-                <span>
-                  <b>{newLeft}</b> yeni kelime
-                </span>
-              )}
+              {[due > 0 && `${due} tekrar`, newLeft > 0 && `${newLeft} yeni`].filter(Boolean).join(' + ')} · ~{minutes} dk
             </p>
-            <button className="btn btn-primary btn-block btn-lg" onClick={() => onStart({})}>
-              Başla ▶
+            <button className="btn btn-on-accent btn-block btn-lg" onClick={() => onStart({})}>
+              {due > 0 ? 'Tekrara başla' : 'Başla'}
             </button>
           </>
         ) : sourceLeft === 0 ? (
           <>
-            <h2>{pack ? `${PACKS[pack].name} tamamlandı!` : `${level} seviyesini tamamladın!`} 🏆</h2>
-            <p className="muted">Buradaki tüm kelimelerle tanıştın. Tekrarlar zamanı gelince karşına çıkmaya devam edecek.</p>
+            <span className="review-kicker">Tebrikler 🏆</span>
+            <h2>{pack ? `${PACKS[pack].name} tamamlandı!` : `${level} seviyesini tamamladın!`}</h2>
+            <p>Tüm kelimelerle tanıştın. Tekrarlar zamanı gelince karşına çıkmaya devam edecek.</p>
             {upcoming && (
-              <button className="btn btn-primary btn-block" onClick={() => onSetLevel(upcoming)}>
+              <button className="btn btn-on-accent btn-block" onClick={() => onSetLevel(upcoming)}>
                 {upcoming} seviyesine geç →
               </button>
             )}
           </>
         ) : (
           <>
-            <h2>Bugünlük bu kadar! 🎉</h2>
-            <p className="muted">Tekrar zamanı gelen kelime yok. İstersen birkaç yeni kelime daha öğrenebilirsin.</p>
-            <button className="btn btn-block" onClick={() => onStart({ extraNew: 4 })}>
+            <span className="review-kicker">Bugünlük bu kadar 🎉</span>
+            <h2>Tekrar zamanı gelen kelime yok</h2>
+            <p>İstersen birkaç yeni kelime daha öğrenebilirsin.</p>
+            <button className="btn btn-on-accent btn-block" onClick={() => onStart({ extraNew: 4 })}>
               +4 yeni kelime
             </button>
           </>
         )}
+      </section>
+
+      <div className="section-head">
+        <h3>Kelimelerim</h3>
+        <button className="chip-btn" onClick={onOpenCustom}>
+          {own.length ? 'Tümü ›' : '+ Kelime ekle'}
+        </button>
       </div>
-
-      <h3>Konular</h3>
-      <div className="topics">
-        {(Object.keys(TOPICS) as TopicId[]).map((id) => {
-          const total = sourceList.filter((w) => w.topic === id).length;
-          if (total === 0) return null;
-          const left = unseenWords(progress, id).length;
-          const seen = total - left;
-          return (
-            <button
-              key={id}
-              className="topic"
-              disabled={left === 0}
-              onClick={() => onStart({ topic: id, extraNew: Math.min(4, left) })}
-              title={left ? `${TOPICS[id].name}: 4 yeni kelime çalış` : 'Bu konudaki tüm kelimeleri öğrendin'}
-            >
-              <EmojiArt emoji={TOPICS[id].emoji} className="topic-emoji" />
-              <span className="topic-name">{TOPICS[id].name}</span>
-              <span className="topic-bar">
-                <span style={{ width: `${(seen / total) * 100}%` }} />
-              </span>
-              <span className="muted small">
-                {seen}/{total}
-              </span>
-            </button>
-          );
-        })}
+      <form className="quick-add" onSubmit={quickAdd}>
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="Yeni kelime yaz, Enter'a bas"
+          aria-label="Yeni kelime"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          enterKeyHint="go"
+        />
+        <button type="submit" aria-label="Kelime ekle">
+          +
+        </button>
+      </form>
+      <div className="tiles">
+        <Tile value={cards.length} label="Toplam" />
+        <Tile value={cards.length - mastered} label="Öğreniliyor" />
+        <Tile value={mastered} label="Kalıcı" />
       </div>
+      {recent.length > 0 && (
+        <div className="card recent-words">
+          {recent.map((w) => {
+            const s = status(progress.cards[w.id]);
+            return (
+              <button key={w.id} className="recent-word" onClick={onOpenCustom}>
+                <span>
+                  <b>{w.en}</b>
+                  <span className="muted small">{w.tr}</span>
+                </span>
+                <span className={`status status-${s}`}>{STATUS_LABEL[s]}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
-      <button className="card custom-cta" onClick={onOpenCustom}>
-        <EmojiArt emoji="✍️" className="topic-emoji" />
-        <span>
-          <b>{progress.customWords.length ? 'Kendi kelimelerim' : 'Kendi kelimelerini ekle'}</b>
-          <span className="muted small">
-            {progress.customWords.length
-              ? `${progress.customWords.length} kelime · yeni ekle ya da düzenle`
-              : 'Kitapta, dizide ya da deneme sınavında gördüğün kelimeleri ekle, birlikte çalışalım.'}
-          </span>
-        </span>
-        <span className="muted">›</span>
-      </button>
-
-      <details className="card tips">
-        <summary>Bu uygulama nasıl çalışıyor?</summary>
-        <ul>
-          <li>
-            <b>Aralıklı tekrar:</b> Doğru bildiğin kelimeler giderek daha uzun aralıklarla (1 gün → 3 gün → 1 hafta → ...)
-            sorulur, yanlış bildiklerin hemen geri gelir. Böylece unutmak üzereyken hatırlarsın ve kelime kalıcı olur.
-          </li>
-          <li>
-            <b>Görsel çağrışım:</b> Her kelime bir görselle eşleşir; soyut kelimelerde birkaç görsel bir sahne anlatır (ör.{' '}
-            <i>quit</i> = işe el sallamak). Beyin resimleri kelimelerden çok daha kolay hatırlar.
-          </li>
-          <li>
-            <b>Renk kodu:</b> Görselin arka planı kelime türünü gösterir: <span className="pos-chip pos-noun">isim</span>{' '}
-            <span className="pos-chip pos-verb">fiil</span> <span className="pos-chip pos-adjective">sıfat</span>{' '}
-            <span className="pos-chip pos-phrasal-verb">deyimsel fiil</span> <span className="pos-chip pos-adverb">zarf</span>{' '}
-            <span className="pos-chip pos-conjunction">bağlaç</span> <span className="pos-chip pos-preposition">edat</span>
-          </li>
-          <li>
-            <b>Eş anlamlılar:</b> Akademik kelimelerin eş anlamlılarını da öğrenirsin. YDS ve YÖKDİL'de aynı anlam çoğu zaman
-            başka kelimelerle verilir; eş anlamlıları bilmek okuma ve çeviri sorularında büyük avantaj sağlar.
-          </li>
-          <li>
-            <b>Kendi görselin:</b> Bir kelimeye kendi fotoğrafını ya da çizimini ekleyebilirsin. Kendi seçtiğin resim en güçlü
-            bağı kurar.
-          </li>
-          <li>
-            <b>Aktif hatırlama:</b> Sadece okumak yerine cevabı kendin bulursun; önce tanıma, sonra yazma ve dinleme.
-          </li>
-          <li>
-            <b>Bağlam ve ses:</b> Kelimeyi bir cümle içinde görür ve doğru telaffuzunu dinlersin.
-          </li>
-          <li>
-            <b>Kendi çağrışımın:</b> Yeni kelimeye kendi notunu ekle; kendi kurduğun bağ en güçlüsüdür.
-          </li>
-        </ul>
-      </details>
+      <div className="section-head">
+        <div>
+          <h3>Hazır alıştırmalar</h3>
+          <p className="muted small">{pack && goal ? `${GOALS[goal].name} hedefine göre seçildi` : `${level} seviyesine göre seçildi`}</p>
+        </div>
+        <button className="chip-btn" onClick={props.onOpenPractice}>
+          Tümü ›
+        </button>
+      </div>
+      <TopicGrid progress={progress} onStart={onStart} limit={4} />
     </div>
   );
 }
 
-function Stat({ value, label }: { value: number | string; label: string }) {
+function Tile({ value, label }: { value: number; label: string }) {
   return (
-    <div className="stat">
-      <div className="stat-value">{value}</div>
-      <div className="stat-label">{label}</div>
+    <div className="tile">
+      <b>{value}</b>
+      <span>{label}</span>
     </div>
   );
 }

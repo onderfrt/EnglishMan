@@ -19,6 +19,8 @@ import { WordDetails } from './WordDetails';
 interface Props {
   /** Düzenlenen kelime; yoksa yeni kelime eklenir. */
   word?: Word;
+  /** Yeni kelimede önceden doldurulacak İngilizce kelime (ana sayfadaki hızlı ekleme). */
+  initialEn?: string;
   level: Level;
   onSave: (word: Word) => void;
   onDelete?: () => void;
@@ -30,9 +32,9 @@ const POS_OPTIONS: [PartOfSpeech, string][] = [
   ...(Object.entries(POS_TR) as [PartOfSpeech, string][]).filter(([p]) => p !== 'other'),
 ];
 
-export function CustomWordForm({ word, level, onSave, onDelete, onCancel }: Props) {
+export function CustomWordForm({ word, initialEn, level, onSave, onDelete, onCancel }: Props) {
   const [id] = useState(() => word?.id ?? newCustomId());
-  const [input, setInput] = useState<CustomWordInput>(() => (word ? toInput(word) : EMPTY_INPUT));
+  const [input, setInput] = useState<CustomWordInput>(() => (word ? toInput(word) : { ...EMPTY_INPUT, en: initialEn ?? '' }));
   const [tried, setTried] = useState(false);
 
   const set = (patch: Partial<CustomWordInput>) => setInput((i) => ({ ...i, ...patch }));

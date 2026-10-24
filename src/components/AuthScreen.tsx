@@ -2,7 +2,6 @@ import { useState, type FormEvent } from 'react';
 import { useBack } from '../lib/back';
 import { sendPasswordReset, signIn, signUp, updatePassword, useSync } from '../lib/sync/engine';
 import { BackBar } from './BackBar';
-import { EmojiArt } from './EmojiArt';
 
 type Mode = 'signin' | 'signup' | 'reset' | 'new-password';
 
@@ -56,25 +55,23 @@ export function AuthScreen({ onClose, initialMode = 'signin' }: Props) {
     }
   };
 
-  const titles: Record<Mode, string> = {
-    signin: 'Giriş yap',
-    signup: 'Hesap oluştur',
-    reset: 'Şifremi unuttum',
-    'new-password': 'Yeni şifre',
+  const heads: Record<Mode, [string, string]> = {
+    signin: ['Tekrar hoş geldin', 'Kaldığın yerden devam et. Kelimelerin ve ilerlemen hesabında seni bekliyor.'],
+    signup: ['Hesap oluştur', 'Kelimelerin, ilerlemen ve fotoğrafların telefonunda ve bilgisayarında aynı olsun.'],
+    reset: ['Şifremi unuttum', 'E-posta adresini yaz, şifreni sıfırlaman için bir bağlantı gönderelim.'],
+    'new-password': ['Yeni şifre', `${user?.email ?? 'Hesabın'} için yeni bir şifre belirle.`],
   };
 
   return (
     <div className="viewer auth-screen">
-      <BackBar title={titles[mode]} />
-      <div className="card">
-        <div className="center">
-          <EmojiArt emoji="☁️" className="summary-emoji" />
-          <p className="muted">
-            {mode === 'new-password'
-              ? `${user?.email ?? 'Hesabın'} için yeni bir şifre belirle.`
-              : 'Hesabınla kelimelerin, ilerlemen ve fotoğrafların telefonunda ve bilgisayarında aynı olur.'}
-          </p>
-        </div>
+      <BackBar title="" />
+      <div className="auth-body">
+        <p className="brand">
+          <span className="brand-mark">E</span>
+          EnglishMan
+        </p>
+        <h1 className="auth-title">{heads[mode][0]}</h1>
+        <p className="muted auth-lead">{heads[mode][1]}</p>
 
         {(mode === 'signin' || mode === 'signup') && (
           <div className="segmented" role="tablist">
@@ -82,7 +79,7 @@ export function AuthScreen({ onClose, initialMode = 'signin' }: Props) {
               Giriş yap
             </button>
             <button role="tab" aria-selected={mode === 'signup'} className={mode === 'signup' ? 'active' : ''} onClick={() => setMode('signup')}>
-              Hesap oluştur
+              Kayıt ol
             </button>
           </div>
         )}
@@ -98,7 +95,7 @@ export function AuthScreen({ onClose, initialMode = 'signin' }: Props) {
                 autoComplete="email"
                 inputMode="email"
                 autoCapitalize="off"
-                placeholder="ornek@eposta.com"
+                placeholder="ornek@mail.com"
               />
             </label>
           )}
@@ -119,6 +116,11 @@ export function AuthScreen({ onClose, initialMode = 'signin' }: Props) {
               </div>
             </label>
           )}
+          {mode === 'signin' && (
+            <button type="button" className="link-btn forgot-link" onClick={() => setMode('reset')}>
+              Şifremi unuttum
+            </button>
+          )}
           {error && <p className="small error">{error}</p>}
           {info && <p className="small notice">{info}</p>}
           <button className="btn btn-primary btn-block btn-lg" type="submit" disabled={busy}>
@@ -126,18 +128,13 @@ export function AuthScreen({ onClose, initialMode = 'signin' }: Props) {
           </button>
         </form>
 
-        {mode === 'signin' && (
-          <button className="link-btn center-link" onClick={() => setMode('reset')}>
-            Şifremi unuttum
-          </button>
-        )}
         {mode === 'reset' && (
           <button className="link-btn center-link" onClick={() => setMode('signin')}>
             ← Girişe dön
           </button>
         )}
         {mode === 'signup' && (
-          <p className="muted small">
+          <p className="muted small auth-foot">
             Hesap oluşturunca bu cihazdaki ilerlemen ve kendi kelimelerin hesabına taşınır. E-posta adresin yalnızca giriş ve
             şifre sıfırlama için kullanılır.
           </p>

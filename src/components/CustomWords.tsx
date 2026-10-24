@@ -17,13 +17,15 @@ interface Props {
   onSave: (word: Word) => void;
   onDelete: (ids: string[]) => void;
   onImport: (added: Word[], updated: Word[]) => void;
+  /** Verilirse liste yerine bu kelimeyle doldurulmuş ekleme formu açılır. */
+  startWith?: string;
 }
 
-type Mode = { kind: 'list' } | { kind: 'edit'; word?: Word } | { kind: 'import' };
+type Mode = { kind: 'list' } | { kind: 'edit'; word?: Word; en?: string } | { kind: 'import' };
 
 /** Kullanıcının kendi eklediği kelimeler: listele, ekle, düzenle, sil, toplu içe aktar. */
-export function CustomWords({ progress, now, level, onSave, onDelete, onImport }: Props) {
-  const [mode, setMode] = useState<Mode>({ kind: 'list' });
+export function CustomWords({ progress, now, level, onSave, onDelete, onImport, startWith }: Props) {
+  const [mode, setMode] = useState<Mode>(startWith !== undefined ? { kind: 'edit', en: startWith } : { kind: 'list' });
   const [viewing, setViewing] = useState<number | null>(null);
   const [query, setQuery] = useState('');
   const [message, setMessage] = useState('');
@@ -37,6 +39,7 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport }
       <CustomWordForm
         key={mode.word?.id ?? 'new'}
         word={mode.word}
+        initialEn={mode.en}
         level={level}
         onSave={(w) => {
           onSave(w);

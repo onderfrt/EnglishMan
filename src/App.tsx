@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Home } from './components/Home';
+import { NavIcon } from './components/NavIcon';
+import { Practice } from './components/Practice';
 import { GoalPicker } from './components/GoalPicker';
 import { LevelPicker } from './components/LevelPicker';
 import { SessionView } from './components/SessionView';
@@ -20,7 +22,14 @@ import { setPreferredVoice } from './lib/speech';
 import { newCard, review, type Grade } from './lib/srs';
 import { dayKey, loadProgress, saveProgress, type Progress, type Theme } from './lib/storage';
 
-type Tab = 'home' | 'words' | 'settings';
+type Tab = 'home' | 'words' | 'practice' | 'settings';
+
+const TABS: [Tab, string][] = [
+  ['home', 'Ana sayfa'],
+  ['words', 'Kelimelerim'],
+  ['practice', 'Alıştırma'],
+  ['settings', 'Profil'],
+];
 
 function applyTheme(theme: Theme) {
   const root = document.documentElement;
@@ -48,6 +57,8 @@ export default function App() {
   const [now, setNow] = useState(Date.now());
   const [picking, setPicking] = useState<'goal' | 'level' | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
+  // Ana sayfadaki hızlı ekleme: Kelimelerim'de bu kelimeyle doldurulmuş form açılır.
+  const [quickAdd, setQuickAdd] = useState<{ en: string; n: number } | null>(null);
   const sync = useSync();
 
   useEffect(() => saveProgress(progress), [progress]);
@@ -154,6 +165,9 @@ export default function App() {
 
   // Geri tuşu (ekrandaki ya da telefonunki): oturumdan, seçim ekranlarından ve sekmelerden ana sayfaya döner.
   useBack(tab !== 'home', () => setTab('home'));
+  useEffect(() => {
+    if (tab !== 'words') setQuickAdd(null);
+  }, [tab]);
   useBack(picking !== null, () => setPicking(null));
   useBack(!!session, endSession);
 
@@ -173,8 +187,9 @@ export default function App() {
   const openLogin = () => setAuthOpen(true);
   const header = (
     <header className="app-header">
-      <h1>
-        English<span>Man</span>
+      <h1 className="brand">
+        <span className="brand-mark">E</span>
+        EnglishMan
       </h1>
       <SyncBadge onClick={() => (sync.user ? setTab('settings') : openLogin())} />
     </header>
@@ -243,11 +258,19 @@ export default function App() {
 
   return withOverlay(
     <main className="app">
-      {tab === 'home' ? header : <BackBar title={tab === 'words' ? 'Kelimeler' : 'Ayarlar'} />}
+      {tab !== 'home' && <BackBar title={TABS.find(([id]) => id === tab)![1]} />}
       {tab === 'home' && (
         <Home
           progress={progress}
           now={now}
+          initial={sync.user?.email ? sync.user.email[0].toLocaleUpperCase('tr') : null}
+          onQuickAdd={(en) => {
+            setQuickAdd((q) => ({ en, n: (q?.n ?? 0) + 1 }));
+            setWordsView('custom');
+            setTab('words');
+          }}
+          onOpenPractice={() => setTab('practice')}
+          onOpenProfile={() => (sync.configured && !sync.user ? openLogin() : setTab('settings'))}
           onStart={start}
           onChangeGoal={() => setPicking('goal')}
           onChangeLevel={() => setPicking('level')}
@@ -268,8 +291,11 @@ export default function App() {
           onSave={saveCustomWord}
           onDelete={deleteCustomWords}
           onImport={importCustomWords}
+          startWith={quickAdd?.en}
+          key={quickAdd?.n ?? 0}
         />
       )}
+      {tab === 'practice' && <Practice progress={progress} onStart={start} />}
       {tab === 'settings' && (
         <SettingsView
           progress={progress}
@@ -281,15 +307,9 @@ export default function App() {
         />
       )}
       <nav className="tabbar">
-        {(
-          [
-            ['home', '🏠', 'Ana Sayfa'],
-            ['words', '📚', 'Kelimeler'],
-            ['settings', '⚙️', 'Ayarlar'],
-          ] as const
-        ).map(([id, icon, label]) => (
-          <button key={id} className={tab === id ? 'active' : ''} onClick={() => setTab(id)}>
-            <span>{icon}</span>
+        {TABS.map(([id, label]) => (
+          <button key={id} className={tab === id ? 'active' : ''} onClick={() => setTab(id)} aria-current={tab === id ? 'page' : undefined}>
+            <NavIcon tab={id} />
             {label}
           </button>
         ))}
