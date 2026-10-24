@@ -33,7 +33,11 @@ export interface Progress {
   notes: Record<string, string>;
   /** Kullanıcının kendi eklediği kelimeler. */
   customWords: Word[];
+  /** Silinen kendi kelimeler: kimlik → silinme zamanı. Eşitlemede başka cihazdan geri gelmesinler diye. */
+  deleted: Record<string, number>;
   settings: Settings;
+  /** Ayarların son değiştirilme zamanı (eşitlemede yeni olan kazanır). */
+  settingsUpdatedAt: number;
   /** Anahtar: YYYY-MM-DD (yerel tarih). */
   days: Record<string, DayLog>;
 }
@@ -52,7 +56,16 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export function emptyProgress(): Progress {
-  return { version: 1, cards: {}, notes: {}, customWords: [], settings: { ...DEFAULT_SETTINGS }, days: {} };
+  return {
+    version: 1,
+    cards: {},
+    notes: {},
+    customWords: [],
+    deleted: {},
+    settings: { ...DEFAULT_SETTINGS },
+    settingsUpdatedAt: 0,
+    days: {},
+  };
 }
 
 export function parseProgress(raw: string): Progress {

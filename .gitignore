@@ -5,3 +5,4 @@ dist
 *.tsbuildinfo
 public/emoji
 public/wordlist.txt
+.env.local

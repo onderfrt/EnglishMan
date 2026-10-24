@@ -42,13 +42,21 @@ uygulama seni bir sonraki seviyeye davet eder. Seviyeyi ana sayfadaki seviye kar
   edilmelidir.
 - **Tek tek:** İngilizce kelime ve Türkçe anlam zorunlu; örnek cümle, çevirisi, kelime türü, eş anlamlılar, emoji ve
   kendi fotoğrafın isteğe bağlı. Yazarken kartın önizlemesi görünür. Kelimeler sonradan düzenlenebilir ve silinebilir.
+- **Toplu seçip silme:** "☑️ Seç" ile kelimeleri (ya da bir aramanın tüm sonuçlarını) seçip tek seferde sil.
 - **Toplu:** Metni yapıştır ya da `.csv` / `.txt` dosyası yükle. Her satır bir kelime:
   `kelime ; anlam ; örnek cümle ; cümlenin çevirisi`. Sekmeyle ayrılmış satırlar (Excel, Google E-Tablolar, Quizlet,
-  Anki) ve `kelime - anlam` biçimi de çalışır. Eklemeden önce önizleme gösterilir; zaten var olan kelimeler atlanır.
+  Anki) ve `kelime - anlam` biçimi de çalışır. Eklemeden önce önizleme gösterilir. Kendi kelimelerinde zaten olan bir kelime **güncellenir** (dosyadaki dolu
+  alanlar, ör. sonradan eklenen örnek cümle, eskisinin yerine geçer); hazır listedeki kelimeler atlanır.
   Excel için hazır şablon indirilebilir.
 - Kendi kelimelerin, hedefin ne olursa olsun yeni kelimeler arasında **önce** öğretilir ve aynı soru tipleriyle sorulur
   (örnek cümle varsa boşluk doldurma, en az iki eş anlamlı varsa eş anlamlı sorusu).
 - Yedek dosyası kendi kelimelerini ve eklediğin fotoğrafları da içerir.
+
+## Hesap ve cihazlar arası eşitleme
+
+İstersen hesap oluşturup telefonda ve bilgisayarda aynı verilerle çalışabilirsin (Ayarlar → ☁️ Hesap, ya da ilk
+açılışta "Zaten hesabım var"). Hesap açınca o cihazdaki ilerlemen hesaba taşınır; değişiklikler otomatik eşitlenir.
+Hesap olmadan da uygulama tamamen çalışır. Sunucu kurulumu: [docs/hesap-kurulumu.md](docs/hesap-kurulumu.md).
 
 ## Gezinme
 
@@ -87,6 +95,7 @@ src/
   lib/catalog.ts       Hazır kelimeler + kullanıcının kendi kelimeleri (tüm uygulama buradan okur)
   lib/customWords.ts   Kendi kelime oluşturma, toplu içe aktarma ayrıştırıcısı, Excel şablonu
   lib/backup.ts        Yedek dosyası (ilerleme + kendi kelimeler + görseller)
+  lib/sync/            Hesap ve eşitleme: merge.ts (birleştirme), engine.ts (eşitleme), supabaseBackend.ts
   lib/back.ts          Geri yığını: ekrandaki Geri düğmesi ve telefonun geri tuşu
   lib/suggest.ts       Kelime ekleme önerileri
   lib/dictionary.ts    İngilizce→Türkçe öneri sözlüğü
@@ -121,6 +130,7 @@ Gelir modeli ve ürünleştirme planı: [docs/is-plani.md](docs/is-plani.md)
 - [x] YDS tarzı boşluk doldurma ve eş anlamlı soruları, Akademik Çekirdek 302 kelime, açık/koyu tema seçimi
 - [x] 3D görseller, görsel sahneler, tür renk kodu, kendi görselini ekleme
 - [x] Kendi kelimeni ekleme, düzenleme, toplu içe aktarma (CSV / Excel / Quizlet / Anki)
+- [x] Hesap ve cihazlar arası eşitleme (Supabase)
 - [ ] Kelime listesini büyütmek
 - [x] Kendi kelimelerde sözlükten Türkçe anlam önerisi
 - [ ] Yapay zekâ ile anlam, örnek cümle ve çeviri doldurma (premium adayı)

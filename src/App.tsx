@@ -1,16 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Home } from './components/Home';
 import { GoalPicker } from './components/GoalPicker';
 import { LevelPicker } from './components/LevelPicker';
 import { SessionView } from './components/SessionView';
 import { SettingsView } from './components/SettingsView';
+import { AuthScreen } from './components/AuthScreen';
 import { BackBar } from './components/BackBar';
+import { SyncBadge } from './components/SyncBadge';
 import { WordsTab, type WordsView } from './components/WordsTab';
 import { GOALS, type Goal, type Level, type Word } from './data/words';
 import type { TypedResult } from './lib/answer';
 import { useBack } from './lib/back';
 import { setCustomWords } from './lib/catalog';
 import { removeUserImages } from './lib/images';
+import { dismissRecovery, initSync, scheduleSync, useSync } from './lib/sync/engine';
+import { sameJSON } from './lib/sync/merge';
 import { buildSession, type SessionOptions, type Step } from './lib/session';
 import { setPreferredVoice } from './lib/speech';
 import { newCard, review, type Grade } from './lib/srs';
@@ -27,7 +31,15 @@ function applyTheme(theme: Theme) {
 const GRADE: Record<TypedResult, Grade> = { correct: 'good', typo: 'hard', wrong: 'again' };
 
 export default function App() {
-  const [progress, setProgress] = useState<Progress>(loadProgress);
+  const [progress, setProgressState] = useState<Progress>(loadProgress);
+  // Her zaman güncel ilerleme: eşitleme motoru React'in bir sonraki çizimini beklemeden okuyabilsin.
+  const progressRef = useRef(progress);
+  const setProgress = useCallback((next: Progress | ((p: Progress) => Progress)) => {
+    const value = typeof next === 'function' ? next(progressRef.current) : next;
+    if (value === progressRef.current) return;
+    progressRef.current = value;
+    setProgressState(value);
+  }, []);
   const [tab, setTab] = useState<Tab>('home');
   const [wordsView, setWordsView] = useState<WordsView>('builtin');
   // Kendi kelimeler tüm uygulamada (oturum, sorular, listeler) görünür olsun.
@@ -35,8 +47,31 @@ export default function App() {
   const [session, setSession] = useState<Step[] | null>(null);
   const [now, setNow] = useState(Date.now());
   const [picking, setPicking] = useState<'goal' | 'level' | null>(null);
+  const [authOpen, setAuthOpen] = useState(false);
+  const sync = useSync();
 
   useEffect(() => saveProgress(progress), [progress]);
+
+  // Hesap ve cihazlar arası eşitleme (yapılandırılmamışsa hiçbir şey yapmaz).
+  useEffect(() => {
+    void initSync({
+      getLocal: () => progressRef.current,
+      // Sunucudan gelen birleştirme gerçekten bir şey değiştirmediyse durumu yenileme (sonsuz eşitlemeyi önler).
+      applyLocal: (fn) => setProgress((p) => {
+        const next = fn(p);
+        return sameJSON(next, p) ? p : next;
+      }),
+    });
+  }, [setProgress]);
+  useEffect(() => scheduleSync(), [progress]);
+
+  // Ayarlar değişince zamanını kaydet (eşitlemede en son değiştirilen ayarlar kazanır). İlk açılışta değil.
+  const lastSettings = useRef(progress.settings);
+  useEffect(() => {
+    if (lastSettings.current === progress.settings) return;
+    lastSettings.current = progress.settings;
+    setProgress((p) => ({ ...p, settingsUpdatedAt: Date.now() }));
+  }, [progress.settings, setProgress]);
   useEffect(() => setPreferredVoice(progress.settings.voiceURI), [progress.settings.voiceURI]);
   useEffect(() => applyTheme(progress.settings.theme), [progress.settings.theme]);
 
@@ -86,7 +121,15 @@ export default function App() {
     removeUserImages(ids);
     setProgress((p) => {
       const keep = <T,>(rec: Record<string, T>) => Object.fromEntries(Object.entries(rec).filter(([id]) => !gone.has(id)));
-      return { ...p, cards: keep(p.cards), notes: keep(p.notes), customWords: p.customWords.filter((w) => !gone.has(w.id)) };
+      const at = Date.now();
+      return {
+        ...p,
+        cards: keep(p.cards),
+        notes: keep(p.notes),
+        customWords: p.customWords.filter((w) => !gone.has(w.id)),
+        // Diğer cihazlardan eşitlemede geri gelmesin
+        deleted: { ...p.deleted, ...Object.fromEntries(ids.map((id) => [id, at])) },
+      };
     });
   };
 
@@ -127,17 +170,36 @@ export default function App() {
   };
 
   const { goal, level, examDate } = progress.settings;
+  const openLogin = () => setAuthOpen(true);
   const header = (
     <header className="app-header">
       <h1>
         English<span>Man</span>
       </h1>
+      <SyncBadge onClick={() => (sync.user ? setTab('settings') : openLogin())} />
     </header>
+  );
+  // Giriş ekranı her ekranın üstünde açılabilir; şifre sıfırlama bağlantısıyla gelinince de açılır.
+  const overlay = (authOpen || sync.recovery) && (
+    <AuthScreen
+      key={sync.recovery ? 'recovery' : 'auth'}
+      initialMode={sync.recovery ? 'new-password' : 'signin'}
+      onClose={() => {
+        setAuthOpen(false);
+        dismissRecovery();
+      }}
+    />
+  );
+  const withOverlay = (node: ReactNode) => (
+    <>
+      {node}
+      {overlay}
+    </>
   );
 
   // İlk açılış: önce hedef, Genel İngilizce seçildiyse ardından seviye.
   if (!goal || picking === 'goal') {
-    return (
+    return withOverlay(
       <main className="app">
         {goal ? <BackBar title="Hedef" /> : header}
         <GoalPicker
@@ -145,13 +207,14 @@ export default function App() {
           examDate={examDate}
           onSelect={setGoal}
           onCancel={goal ? () => setPicking(null) : undefined}
+          onLogin={sync.configured && !sync.user ? openLogin : undefined}
         />
       </main>
     );
   }
 
   if ((goal === 'general' && !level) || picking === 'level') {
-    return (
+    return withOverlay(
       <main className="app">
         {level ? <BackBar title="Seviye" /> : header}
         <LevelPicker
@@ -165,7 +228,7 @@ export default function App() {
   }
 
   if (session) {
-    return (
+    return withOverlay(
       <main className="app">
         <SessionView
           initialSteps={session}
@@ -178,7 +241,7 @@ export default function App() {
     );
   }
 
-  return (
+  return withOverlay(
     <main className="app">
       {tab === 'home' ? header : <BackBar title={tab === 'words' ? 'Kelimeler' : 'Ayarlar'} />}
       {tab === 'home' && (
@@ -213,6 +276,8 @@ export default function App() {
           onChange={setProgress}
           onChangeGoal={() => setPicking('goal')}
           onChangeLevel={() => setPicking('level')}
+          onLogin={openLogin}
+          now={now}
         />
       )}
       <nav className="tabbar">

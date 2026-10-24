@@ -4,41 +4,59 @@ import { useSyncExternalStore } from 'react';
  * Kullanıcının kelimelere eklediği kendi görselleri (fotoğraf/çizim).
  * Kendi seçtiğin bir resim, hazır bir görselden çok daha güçlü bir hafıza bağı kurar.
  * Görseller küçültülüp (en fazla 320px, JPEG) tarayıcıda ayrı bir anahtarda saklanır.
+ *
+ * Cihazlar arası eşitleme için her kelimenin görselinin son eklenme/silinme zamanı da tutulur;
+ * böylece bir cihazda silinen fotoğraf diğerinden geri gelmez.
  */
 const KEY = 'englishman:images:v1';
+const META_KEY = 'englishman:images:meta:v1';
 const MAX_SIZE = 320;
 
-let images: Record<string, string> = load();
+export interface ImageMeta {
+  /** Son değişiklik zamanı (ms). */
+  at: number;
+  removed?: true;
+}
+
+export interface ImageState {
+  images: Record<string, string>;
+  meta: Record<string, ImageMeta>;
+}
+
+let state: ImageState = { images: read(KEY), meta: read(META_KEY) };
 const listeners = new Set<() => void>();
 
-function load(): Record<string, string> {
+function read<T>(key: string): Record<string, T> {
   try {
-    return JSON.parse(localStorage.getItem(KEY) ?? '{}');
+    return JSON.parse(localStorage.getItem(key) ?? '{}');
   } catch {
     return {};
   }
 }
 
-function commit(next: Record<string, string>): boolean {
+function commit(next: ImageState): boolean {
   try {
-    localStorage.setItem(KEY, JSON.stringify(next));
+    localStorage.setItem(KEY, JSON.stringify(next.images));
+    localStorage.setItem(META_KEY, JSON.stringify(next.meta));
   } catch {
     return false; // Depolama dolu.
   }
-  images = next;
+  state = next;
   listeners.forEach((l) => l());
   return true;
 }
 
-export function useUserImage(wordId: string): string | undefined {
-  return useSyncExternalStore(
-    (l) => {
-      listeners.add(l);
-      return () => listeners.delete(l);
-    },
-    () => images[wordId],
-  );
+function subscribe(l: () => void) {
+  listeners.add(l);
+  return () => listeners.delete(l);
 }
+
+export function useUserImage(wordId: string): string | undefined {
+  return useSyncExternalStore(subscribe, () => state.images[wordId]);
+}
+
+/** Görseller değişince haber verir (eşitleme için). */
+export const onImagesChange = subscribe;
 
 export function removeUserImage(wordId: string): void {
   removeUserImages([wordId]);
@@ -46,10 +64,16 @@ export function removeUserImage(wordId: string): void {
 
 /** Birden çok kelimenin görselini tek seferde siler (toplu silmede depolama yalnızca bir kez yazılır). */
 export function removeUserImages(wordIds: string[]): void {
-  if (!wordIds.some((id) => id in images)) return;
-  const next = { ...images };
-  for (const id of wordIds) delete next[id];
-  commit(next);
+  const present = wordIds.filter((id) => id in state.images);
+  if (!present.length) return;
+  const images = { ...state.images };
+  const meta = { ...state.meta };
+  const at = Date.now();
+  for (const id of present) {
+    delete images[id];
+    meta[id] = { at, removed: true };
+  }
+  commit({ images, meta });
 }
 
 /** Dosyayı kare olarak kırpar, küçültür ve kaydeder. Başarısızsa hata mesajı döner. */
@@ -72,7 +96,11 @@ export async function setUserImage(wordId: string, file: File): Promise<string |
       size,
     );
     const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
-    return commit({ ...images, [wordId]: dataUrl }) ? null : 'Depolama alanı dolu; bazı görselleri kaldırmayı dene.';
+    const ok = commit({
+      images: { ...state.images, [wordId]: dataUrl },
+      meta: { ...state.meta, [wordId]: { at: Date.now() } },
+    });
+    return ok ? null : 'Depolama alanı dolu; bazı görselleri kaldırmayı dene.';
   } catch {
     return 'Bu dosya açılamadı. Bir fotoğraf ya da resim seç.';
   }
@@ -80,10 +108,27 @@ export async function setUserImage(wordId: string, file: File): Promise<string |
 
 /** Yedekleme için tüm kullanıcı görselleri. */
 export function allUserImages(): Record<string, string> {
-  return images;
+  return state.images;
 }
 
 /** Yedekten geri yükleme: mevcut görsellerle birleştirir. Başarısızsa (depolama dolu) false döner. */
 export function mergeUserImages(incoming: Record<string, string>): boolean {
-  return commit({ ...images, ...incoming });
+  const at = Date.now();
+  const meta = { ...state.meta };
+  for (const id of Object.keys(incoming)) meta[id] = { at };
+  return commit({ images: { ...state.images, ...incoming }, meta });
+}
+
+export function getImageState(): ImageState {
+  return state;
+}
+
+/** Eşitlemeden gelen birleştirilmiş durumu yazar. */
+export function replaceImageState(next: ImageState): boolean {
+  return commit(next);
+}
+
+/** Bu cihazdaki tüm görselleri siler (çıkışta "bu cihazdan da sil" seçilirse). */
+export function clearImages(): void {
+  commit({ images: {}, meta: {} });
 }

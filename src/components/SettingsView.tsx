@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { GOALS, LEVELS } from '../data/words';
 import { canSpeak, englishVoices, onVoicesChanged, SLOW_RATE, speak } from '../lib/speech';
 import { exportBackup, importBackup } from '../lib/backup';
+import { AccountCard } from './AccountCard';
 import { downloadText } from '../lib/download';
 import { emptyProgress, type Progress, type Settings, type Theme } from '../lib/storage';
 
@@ -16,9 +17,11 @@ interface Props {
   onChange: (p: Progress) => void;
   onChangeGoal: () => void;
   onChangeLevel: () => void;
+  onLogin: () => void;
+  now: number;
 }
 
-export function SettingsView({ progress, onChange, onChangeGoal, onChangeLevel }: Props) {
+export function SettingsView({ progress, onChange, onChangeGoal, onChangeLevel, onLogin, now }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
   const [voices, setVoices] = useState(englishVoices);
@@ -41,6 +44,7 @@ export function SettingsView({ progress, onChange, onChangeGoal, onChangeLevel }
 
   return (
     <div className="settings">
+      <AccountCard onLogin={onLogin} now={now} />
       <div className="card">
         <div className="setting">
           <span>Görünüm</span>
@@ -147,8 +151,8 @@ export function SettingsView({ progress, onChange, onChangeGoal, onChangeLevel }
       <div className="card">
         <h3>Yedekleme</h3>
         <p className="muted small">
-          İlerlemen, kendi kelimelerin ve eklediğin görseller bu cihazın tarayıcısında saklanır. Başka cihaza taşımak ya da
-          yedeklemek için dışa aktar.
+          İlerlemen, kendi kelimelerin ve eklediğin görseller bu cihazda (hesapla giriş yaptıysan hesabında da) saklanır.
+          İstersen ayrıca bir yedek dosyası indirebilirsin.
         </p>
         <div className="row">
           <button className="btn" onClick={exportData}>

@@ -19,7 +19,9 @@ export function Home({ progress, now, onStart, onChangeGoal, onChangeLevel, onSe
   const pack = goal ? GOALS[goal].pack : null;
   const sourceList = sourceWords(progress);
   const sourceLeft = unseenWords(progress).length;
-  const sourceDone = sourceList.length - sourceLeft;
+  // Seviye/paket ilerlemesi yalnızca paketin ya da seviyenin kelimelerini sayar (kendi kelimeler hariç).
+  const packList = sourceList.filter((w) => !w.custom);
+  const packDone = packList.filter((w) => progress.cards[w.id]).length;
   const upcoming = !pack && level ? nextLevel(level) : null;
   const examDays = pack ? daysUntil(examDate, now) : null;
   // Paketi sınava kadar bitirmek için günde kaç yeni kelime gerekir?
@@ -45,7 +47,7 @@ export function Home({ progress, now, onStart, onChangeGoal, onChangeLevel, onSe
               {GOALS[goal].name} · {PACKS[pack].name}
             </b>
             <span className="topic-bar">
-              <span style={{ width: `${(sourceDone / sourceList.length) * 100}%` }} />
+              <span style={{ width: `${(packDone / packList.length) * 100}%` }} />
             </span>
             {examDays !== null && (
               <span className="small">
@@ -55,7 +57,7 @@ export function Home({ progress, now, onStart, onChangeGoal, onChangeLevel, onSe
             )}
           </span>
           <span className="muted small">
-            {sourceDone}/{sourceList.length} · Değiştir ▾
+            {packDone}/{packList.length} · Değiştir ▾
           </span>
         </button>
       ) : (
@@ -73,11 +75,11 @@ export function Home({ progress, now, onStart, onChangeGoal, onChangeLevel, onSe
               <span className="level-text">
                 <b>{LEVELS[level].name}</b>
                 <span className="topic-bar">
-                  <span style={{ width: `${(sourceDone / sourceList.length) * 100}%` }} />
+                  <span style={{ width: `${(packDone / packList.length) * 100}%` }} />
                 </span>
               </span>
               <span className="muted small">
-                {sourceDone}/{sourceList.length} · Değiştir ▾
+                {packDone}/{packList.length} · Değiştir ▾
               </span>
             </button>
           </>

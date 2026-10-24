@@ -9,12 +9,14 @@ interface Props {
   examDate: string | null;
   onSelect: (goal: Goal, examDate: string | null) => void;
   onCancel?: () => void;
+  /** Hesap özelliği varsa ve giriş yapılmamışsa: "Zaten hesabım var" bağlantısı. */
+  onLogin?: () => void;
 }
 
 const ORDER: Goal[] = ['yds', 'yokdil', 'ielts', 'general'];
 
 /** Hedef seçimi. Sınav hedeflerinde ikinci adımda isteğe bağlı sınav tarihi sorulur. */
-export function GoalPicker({ current, examDate, onSelect, onCancel }: Props) {
+export function GoalPicker({ current, examDate, onSelect, onCancel, onLogin }: Props) {
   const [exam, setExam] = useState<Goal | null>(null);
   const [date, setDate] = useState(examDate ?? '');
   useBack(!!exam, () => setExam(null));
@@ -47,6 +49,11 @@ export function GoalPicker({ current, examDate, onSelect, onCancel }: Props) {
       <div className="card">
         <h2>{current ? 'Hedefini değiştir' : 'Hoş geldin! 👋'}</h2>
         <p className="muted">Ne için İngilizce çalışıyorsun? Yeni kelimeler hedefine göre seçilir.</p>
+        {onLogin && !current && (
+          <button className="btn btn-block" onClick={onLogin}>
+            ☁️ Zaten hesabım var, giriş yap
+          </button>
+        )}
       </div>
       <div className="levels">
         {ORDER.map((goal) => (

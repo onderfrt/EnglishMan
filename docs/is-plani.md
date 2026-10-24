@@ -149,7 +149,7 @@ ve cihazlar arası senkronizasyon.
 | 1–2 ✅ | Hedef seçimi (YDS / YÖKDİL / IELTS / Genel); **Akademik Çekirdek** paketinin ilk 150 kelimesi; kelimelere **eş anlamlılar** (YDS'de paraphrase bilgisi kritik) | Uygulamayı kullanmak; çevirileri ve örnek cümleleri kontrol etmek; ad kontrolleri (bölüm 9) |
 | 3–4 ✅ | **YDS tarzı soru:** boşluklu cümle + A–E şıkları; eş anlamlı bulma sorusu; Akademik Çekirdek 300 kelime | YDS/IELTS'e hazırlanan **5–10 kişiyle konuşmak**: en çok neyi zor buluyorlar, ne için para ödüyorlar? |
 | 5–6 | **IELTS konu paketleri** (çevre, eğitim, teknoloji, sağlık…) ve **collocation** soruları (ör. *make a decision*) | YDS/IELTS topluluklarını bulmak (Telegram, forumlar, Instagram); beta test kullanıcısı toplamak |
-| 7–8 | **Hesap + bulut senkronizasyonu**, tanıtım sayfası + bekleme listesi, gizliliğe saygılı analitik | Tanıtım sayfası metinleri; beta davetleri |
+| 7–8 🔄 | **Hesap + bulut senkronizasyonu** (kod hazır, Supabase kurulumu bekleniyor: docs/hesap-kurulumu.md), tanıtım sayfası + bekleme listesi, gizliliğe saygılı analitik | Tanıtım sayfası metinleri; beta davetleri |
 | 9–10 | Günlük hatırlatma bildirimleri; beta geri bildirimlerine göre düzeltmeler | Betayı yürütmek; 7. gün tutunma oranına bakmak |
 
 **İçerik ilkeleri:**
