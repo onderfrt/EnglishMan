@@ -66,6 +66,8 @@ export function choicesFor(word: Word, rng: Rng = Math.random, count = 4): Word[
 
 export interface SessionOptions {
   topic?: TopicId;
+  /** Yalnızca kullanıcının kendi eklediği kelimeler. */
+  own?: boolean;
   /** Günlük yeni kelime limitine takılmadan ekstra yeni kelime çalış. */
   extraNew?: number;
 }
@@ -94,8 +96,8 @@ export function sourceWords(p: Progress): Word[] {
 }
 
 /** Kaynakta henüz çalışılmamış kelimeler. */
-export function unseenWords(p: Progress, topic?: TopicId): Word[] {
-  return sourceWords(p).filter((w) => !p.cards[w.id] && (!topic || w.topic === topic));
+export function unseenWords(p: Progress, topic?: TopicId, own?: boolean): Word[] {
+  return sourceWords(p).filter((w) => !p.cards[w.id] && (!topic || w.topic === topic) && (!own || !!w.custom));
 }
 
 export function nextLevel(level: Level): Level | null {
@@ -108,6 +110,7 @@ export function buildSession(p: Progress, now: number, opts: SessionOptions = {}
   const isExam = !!(p.settings.goal && GOALS[p.settings.goal].pack);
   const reviews = dueCards(p, now)
     .filter((c) => !opts.topic || wordById(c.wordId)!.topic === opts.topic)
+    .filter((c) => !opts.own || !!wordById(c.wordId)!.custom)
     .slice(0, p.settings.maxReviewsPerSession);
 
   const steps: Step[] = shuffle(reviews, rng).map((c) => ({
@@ -118,7 +121,7 @@ export function buildSession(p: Progress, now: number, opts: SessionOptions = {}
   }));
 
   const newCount = opts.extraNew ?? newWordsLeftToday(p, now);
-  const fresh = unseenWords(p, opts.topic).slice(0, newCount);
+  const fresh = unseenWords(p, opts.topic, opts.own).slice(0, newCount);
 
   // Yeni kelimeler 4'erli gruplar hâlinde: önce tanış, hemen ardından karışık sırayla test et.
   for (let i = 0; i < fresh.length; i += CHUNK) {

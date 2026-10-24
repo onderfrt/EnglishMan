@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Word } from '../data/words';
 import { speak } from '../lib/speech';
+import { ReportLink } from './ReportSheet';
 import { WordDetails } from './WordDetails';
 
 interface Props {
@@ -42,6 +43,10 @@ export function LearnCard({ word, note, autoSpeak, onNote, onNext }: Props) {
       <button className="btn btn-primary btn-block sticky-action" onClick={next}>
         Anladım, devam →
       </button>
+      <ReportLink
+        label="⚑ Bu kelimede hata var mı? Bildir"
+        getReport={() => ({ wordId: word.id, word: word.en, mode: 'learn', details: { tr: word.tr, example: word.example, exampleTr: word.exampleTr, synonyms: word.synonyms } })}
+      />
     </div>
   );
 }

@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { GOALS, LEVELS } from '../data/words';
-import { canSpeak, englishVoices, onVoicesChanged, SLOW_RATE, speak } from '../lib/speech';
+import { autoVoiceName, canSpeak, englishVoices, onVoicesChanged, SLOW_RATE, speak } from '../lib/speech';
 import { exportBackup, importBackup } from '../lib/backup';
-import { AccountCard } from './AccountCard';
+import { AccountActions, AccountCard } from './AccountCard';
+import { EmojiArt } from './EmojiArt';
 import { downloadText } from '../lib/download';
 import { emptyProgress, type Progress, type Settings, type Theme } from '../lib/storage';
 
 const THEMES: [Theme, string][] = [
-  ['system', '📱 Sistem'],
-  ['light', '☀️ Açık'],
-  ['dark', '🌙 Koyu'],
+  ['system', 'Sistem'],
+  ['light', 'Açık'],
+  ['dark', 'Koyu'],
 ];
 
 interface Props {
@@ -42,12 +43,103 @@ export function SettingsView({ progress, onChange, onChangeGoal, onChangeLevel, 
     }
   };
 
+  const voiceName = s.voiceURI ? voices.find((v) => v.voiceURI === s.voiceURI)?.name : null;
+  const shortName = (name: string) => name.replace(/^(Microsoft|Google)\s+/, '').replace(/\s+-\s+.*$/, '').replace(/\s*\(.*\)$/, '');
+
   return (
     <div className="settings">
       <AccountCard onLogin={onLogin} now={now} />
-      <div className="card">
-        <div className="setting">
-          <span>Görünüm</span>
+
+      <h4 className="group-title">Çalışma</h4>
+      <div className="card list-card">
+        <button className="list-row" onClick={onChangeGoal}>
+          <span className="list-text">Hedef</span>
+          <span className="list-value">
+            {s.goal && (
+              <>
+                <EmojiArt emoji={GOALS[s.goal].emoji} /> {GOALS[s.goal].name}
+              </>
+            )}
+          </span>
+          <span className="chev">›</span>
+        </button>
+        {s.goal && GOALS[s.goal].pack ? (
+          <label className="list-row">
+            <span className="list-text">Sınav tarihi</span>
+            <span className={`list-value ${s.examDate ? '' : 'accent'}`}>
+              {s.examDate ? new Date(`${s.examDate}T12:00`).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Seç'}
+            </span>
+            <span className="chev">›</span>
+            <input
+              type="date"
+              className="overlay-input"
+              value={s.examDate ?? ''}
+              onChange={(e) => set({ examDate: e.target.value || null })}
+              onClick={(e) => {
+                try {
+                  e.currentTarget.showPicker?.();
+                } catch {
+                  // Bazı tarayıcılar showPicker'ı desteklemez; dokunmak zaten seçiciyi açar.
+                }
+              }}
+              aria-label="Sınav tarihi"
+            />
+          </label>
+        ) : (
+          <button className="list-row" onClick={onChangeLevel}>
+            <span className="list-text">Seviye</span>
+            <span className="list-value">
+              {s.level} · {s.level && LEVELS[s.level].name}
+            </span>
+            <span className="chev">›</span>
+          </button>
+        )}
+        <div className="list-row">
+          <span className="list-text">
+            Günlük yeni kelime
+            <span className="muted small">Başlangıç için 5–10 ideal</span>
+          </span>
+          <Stepper value={s.newPerDay} min={0} max={30} step={1} onChange={(v) => set({ newPerDay: v })} label="Günlük yeni kelime" />
+        </div>
+        <div className="list-row">
+          <span className="list-text">Oturum başına tekrar</span>
+          <Stepper value={s.maxReviewsPerSession} min={10} max={150} step={10} onChange={(v) => set({ maxReviewsPerSession: v })} label="Oturum başına tekrar" />
+        </div>
+      </div>
+
+      <h4 className="group-title">Ses ve görünüm</h4>
+      <div className="card list-card">
+        <label className="list-row">
+          <span className="list-text">Otomatik seslendir</span>
+          <input type="checkbox" role="switch" className="switch" checked={s.autoSpeak} onChange={(e) => set({ autoSpeak: e.target.checked })} />
+        </label>
+        {canSpeak() ? (
+          <div className="list-row">
+            <label className="list-text voice-pick">
+              <span>
+                Ses · <span className="muted">{voiceName ? shortName(voiceName) : `Otomatik${autoVoiceName() ? ` (${shortName(autoVoiceName()!)})` : ''}`}</span>
+              </span>
+              <span className="small accent">Değiştir ▾</span>
+              <select className="overlay-input" value={s.voiceURI ?? ''} onChange={(e) => set({ voiceURI: e.target.value || null })} aria-label="Ses">
+                <option value="">Otomatik (yumuşak kadın sesi)</option>
+                {voices.map((v) => (
+                  <option key={v.voiceURI} value={v.voiceURI}>
+                    {v.name} ({v.lang}){v.localService ? '' : ' · internet'}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button className="btn btn-sm" onClick={() => speak('Hello! This is how words will sound.')}>
+              🔈 Dene
+            </button>
+            <button className="btn btn-sm" onClick={() => speak('Hello! This is how words will sound.', SLOW_RATE)}>
+              🐢 Yavaş
+            </button>
+          </div>
+        ) : (
+          <p className="muted small list-row">Bu tarayıcı sesli okumayı desteklemiyor; dinleme soruları çalışmayabilir.</p>
+        )}
+        <div className="list-row">
           <div className="segmented" role="radiogroup" aria-label="Görünüm">
             {THEMES.map(([value, label]) => (
               <button
@@ -61,133 +153,59 @@ export function SettingsView({ progress, onChange, onChangeGoal, onChangeLevel, 
               </button>
             ))}
           </div>
-          <small className="muted">“Sistem” seçiliyken uygulama telefonunun açık/koyu temasını izler.</small>
         </div>
       </div>
 
-      <div className="card">
-        <div className="setting setting-inline">
-          <span>
-            Hedef: <b>{s.goal && GOALS[s.goal].name}</b>
-          </span>
-          <button className="btn" onClick={onChangeGoal}>
-            Değiştir
-          </button>
-        </div>
-        {s.goal && GOALS[s.goal].pack ? (
-          <label className="setting">
-            <span>Sınav tarihi</span>
-            <input
-              type="date"
-              className="search"
-              value={s.examDate ?? ''}
-              onChange={(e) => set({ examDate: e.target.value || null })}
-            />
-          </label>
-        ) : (
-          <div className="setting setting-inline">
-            <span>
-              Seviye: <b>{s.level}</b> — {s.level && LEVELS[s.level].name}
-            </span>
-            <button className="btn" onClick={onChangeLevel}>
-              Değiştir
-            </button>
-          </div>
-        )}
-        <label className="setting">
-          <span>
-            Günlük yeni kelime: <b>{s.newPerDay}</b>
-          </span>
-          <input type="range" min={0} max={30} value={s.newPerDay} onChange={(e) => set({ newPerDay: Number(e.target.value) })} />
-          <small className="muted">Başlangıç için 5–10 idealdir. Yeni kelimeler sonraki günlerde tekrar yükü getirir.</small>
-        </label>
-        <label className="setting">
-          <span>
-            Oturum başına en fazla tekrar: <b>{s.maxReviewsPerSession}</b>
-          </span>
-          <input
-            type="range"
-            min={10}
-            max={150}
-            step={10}
-            value={s.maxReviewsPerSession}
-            onChange={(e) => set({ maxReviewsPerSession: Number(e.target.value) })}
-          />
-        </label>
-        <label className="setting setting-inline">
-          <input type="checkbox" checked={s.autoSpeak} onChange={(e) => set({ autoSpeak: e.target.checked })} />
-          <span>Kelimeleri otomatik seslendir</span>
-        </label>
-        {canSpeak() ? (
-          <div className="setting">
-            <label>
-              <span>Ses</span>
-              <select value={s.voiceURI ?? ''} onChange={(e) => set({ voiceURI: e.target.value || null })}>
-                <option value="">Otomatik</option>
-                {voices.map((v) => (
-                  <option key={v.voiceURI} value={v.voiceURI}>
-                    {v.name} ({v.lang}){v.localService ? '' : ' · internet'}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="row">
-              <button className="btn" onClick={() => speak('Hello! This is how words will sound.')}>
-                🔊 Normal dene
-              </button>
-              <button className="btn" onClick={() => speak('Hello! This is how words will sound.', SLOW_RATE)}>
-                🐢 Yavaş dene
-              </button>
-            </div>
-            <small className="muted">
-              Yavaş okuma hızlanmıyorsa farklı bir ses seç. “internet” yazan sesler bazı telefonlarda hız ayarını desteklemez.
-            </small>
-          </div>
-        ) : (
-          <p className="muted small">Bu tarayıcı sesli okumayı desteklemiyor; dinleme soruları çalışmayabilir.</p>
-        )}
-      </div>
-
-      <div className="card">
-        <h3>Yedekleme</h3>
-        <p className="muted small">
-          İlerlemen, kendi kelimelerin ve eklediğin görseller bu cihazda (hesapla giriş yaptıysan hesabında da) saklanır.
-          İstersen ayrıca bir yedek dosyası indirebilirsin.
-        </p>
-        <div className="row">
-          <button className="btn" onClick={exportData}>
-            ⬇️ Dışa aktar
-          </button>
-          <button className="btn" onClick={() => fileRef.current?.click()}>
-            ⬆️ İçe aktar
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/json"
-            hidden
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) importData(f);
-              e.target.value = '';
-            }}
-          />
-        </div>
-        {message && <p className="small">{message}</p>}
-      </div>
-
-      <div className="card">
-        <h3>Sıfırla</h3>
+      <h4 className="group-title">Veri</h4>
+      <div className="card list-card">
+        <button className="list-row" onClick={exportData}>
+          <span className="list-text">Yedeği dışa aktar</span>
+          <span className="chev">›</span>
+        </button>
+        <button className="list-row" onClick={() => fileRef.current?.click()}>
+          <span className="list-text">Yedekten içe aktar</span>
+          <span className="chev">›</span>
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json"
+          hidden
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) importData(f);
+            e.target.value = '';
+          }}
+        />
         <button
-          className="btn btn-danger"
+          className="list-row danger"
           onClick={() => {
             if (confirm('Tüm ilerlemen silinecek (kendi kelimelerin kalır). Emin misin?'))
               onChange({ ...emptyProgress(), customWords: progress.customWords, settings: s });
           }}
         >
-          🗑️ İlerlemeyi sıfırla
+          <span className="list-text">İlerlemeyi sıfırla</span>
         </button>
+        <AccountActions />
       </div>
+      {message && <p className="small">{message}</p>}
+      <p className="muted small center">
+        İlerlemen, kendi kelimelerin ve görsellerin bu cihazda (giriş yaptıysan hesabında da) saklanır.
+      </p>
     </div>
+  );
+}
+
+function Stepper({ value, min, max, step, onChange, label }: { value: number; min: number; max: number; step: number; onChange: (v: number) => void; label: string }) {
+  return (
+    <span className="stepper" role="group" aria-label={label}>
+      <button type="button" onClick={() => onChange(Math.max(min, value - step))} disabled={value <= min} aria-label="Azalt">
+        −
+      </button>
+      <b aria-live="polite">{value}</b>
+      <button type="button" onClick={() => onChange(Math.min(max, value + step))} disabled={value >= max} aria-label="Artır">
+        +
+      </button>
+    </span>
   );
 }

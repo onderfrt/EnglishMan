@@ -4,6 +4,7 @@ import { checkTyped, type TypedResult } from '../lib/answer';
 import { clozeQuestion, synonymQuestion, type ClozeQuestion } from '../lib/exam';
 import { choicesFor, type QuizMode } from '../lib/session';
 import { SLOW_RATE, speak } from '../lib/speech';
+import { ReportLink } from './ReportSheet';
 import { SpeakButton } from './Speak';
 import { WordDetails } from './WordDetails';
 import { WordVisual } from './WordVisual';
@@ -15,6 +16,8 @@ interface Props {
   autoSpeak: boolean;
   onAnswer: (result: TypedResult) => void;
   onNext: () => void;
+  /** Soru hatalı diye bildirildi (yanlış cevaplandıysa cevabı geri alınır). */
+  onReported?: (result: TypedResult | null) => void;
 }
 
 const PROMPTS: Record<QuizMode, string> = {
@@ -35,7 +38,7 @@ interface Option {
 
 const LETTERS = 'ABCDE';
 
-export function Quiz({ word, mode: requestedMode, note, autoSpeak, onAnswer, onNext }: Props) {
+export function Quiz({ word, mode: requestedMode, note, autoSpeak, onAnswer, onNext, onReported }: Props) {
   const [result, setResult] = useState<TypedResult | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [typed, setTyped] = useState('');
@@ -94,9 +97,26 @@ export function Quiz({ word, mode: requestedMode, note, autoSpeak, onAnswer, onN
     answer(hint && r === 'correct' ? 'typo' : r);
   };
 
+  const reportData = () => ({
+    wordId: word.id,
+    word: word.en,
+    mode,
+    details: {
+      prompt: PROMPTS[mode],
+      tr: word.tr,
+      sentence: cloze ? `${cloze.before}_____${cloze.after}` : undefined,
+      translation: cloze?.translation,
+      options: isTyping ? undefined : options.map((o) => o.label),
+      correct: options.find((o) => o.correct)?.label ?? word.en,
+      chosen: isTyping ? typed.trim() || undefined : options.find((o) => o.key === selected)?.label,
+      result,
+    },
+  });
+
   // Klavye kısayolları: 1-5 ya da A-E şık seçer, Enter devam eder.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (document.querySelector('.sheet')) return;
       if (result && e.key === 'Enter' && document.activeElement !== nextRef.current) {
         e.preventDefault();
         onNext();
@@ -235,6 +255,8 @@ export function Quiz({ word, mode: requestedMode, note, autoSpeak, onAnswer, onN
           </button>
         </>
       )}
+
+      <ReportLink key={word.id + mode} getReport={reportData} answeredWrong={result === 'wrong'} onSent={() => onReported?.(result)} />
     </div>
   );
 }

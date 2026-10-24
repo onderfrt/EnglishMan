@@ -1,4 +1,5 @@
 import type { ImageState } from '../images';
+import type { QuestionReport } from '../reports';
 import type { Progress } from '../storage';
 
 export interface User {
@@ -28,6 +29,8 @@ export interface Backend {
   load(userId: string): Promise<RemoteData | null>;
   /** images verilmezse sunucudaki görseller olduğu gibi kalır (her seferinde büyük veri gönderilmesin). */
   save(userId: string, progress: Progress, images?: ImageState): Promise<void>;
+  /** Hatalı soru bildirimlerini gönderir (hesapsız kullanıcılar için userId null). */
+  sendReports?(reports: QuestionReport[], userId: string | null): Promise<void>;
 }
 
 /** Kullanıcıya gösterilecek Türkçe hata mesajı. */

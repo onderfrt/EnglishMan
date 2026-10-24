@@ -4,7 +4,7 @@ import { useBack } from '../lib/back';
 import { speak } from '../lib/speech';
 import { formatDue } from '../lib/srs';
 import type { Progress } from '../lib/storage';
-import { BackBar } from './BackBar';
+import { goBack } from '../lib/back';
 import { WordDetails } from './WordDetails';
 
 interface Props {
@@ -66,20 +66,30 @@ export function WordViewer({ words, index, progress, now, onIndexChange, onClose
         if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? 1 : -1);
       }}
     >
-      <BackBar title={`${index + 1} / ${words.length}`}>{actions?.(word)}</BackBar>
-      <div className="card" key={word.id}>
+      <header className="viewer-top">
+        <button type="button" className="round-btn" onClick={goBack} aria-label="Kapat">
+          ✕
+        </button>
+        <div className="meter thin">
+          <span style={{ width: `${((index + 1) / words.length) * 100}%` }} />
+        </div>
+        <span className="muted small">
+          {index + 1} / {words.length}
+        </span>
+        {actions?.(word)}
+      </header>
+      <div className="card viewer-card" key={word.id}>
         <WordDetails word={word} note={progress.notes[word.id]} editable />
         {card && <p className="muted small center">Sonraki tekrar: {formatDue(card.due, now)}</p>}
       </div>
       <div className="viewer-nav">
-        <button className="btn" onClick={() => go(-1)} disabled={!hasPrev} aria-label="Önceki kelime">
-          ‹ Önceki
+        <button className="btn prev-btn" onClick={() => go(-1)} disabled={!hasPrev} aria-label="Önceki kelime">
+          ‹
         </button>
         <button className="btn btn-primary" onClick={() => go(1)} disabled={!hasNext} aria-label="Sonraki kelime">
           Sonraki ›
         </button>
       </div>
-      <p className="muted small center viewer-hint">İpucu: sağa-sola kaydırarak da geçebilirsin.</p>
     </div>
   );
 }

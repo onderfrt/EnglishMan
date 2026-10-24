@@ -8,7 +8,7 @@ import { EmojiArt } from './EmojiArt';
 import { ImportWords } from './ImportWords';
 import { SpeakButton } from './Speak';
 import { WordViewer } from './WordViewer';
-import { STATUS_LABEL, status } from './WordList';
+import { FilterChips, matchesFilter, WordRowContent, type Filter } from './WordList';
 
 interface Props {
   progress: Progress;
@@ -28,6 +28,7 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
   const [mode, setMode] = useState<Mode>(startWith !== undefined ? { kind: 'edit', en: startWith } : { kind: 'list' });
   const [viewing, setViewing] = useState<number | null>(null);
   const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<Filter>('all');
   const [message, setMessage] = useState('');
   // Toplu seçim: null = seçim modu kapalı
   const [selected, setSelected] = useState<Set<string> | null>(null);
@@ -80,6 +81,7 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
   const q = query.trim().toLowerCase();
   const list = words
     .filter((w) => !q || w.en.toLowerCase().includes(q) || w.tr.toLowerCase().includes(q))
+    .filter((w) => matchesFilter(progress.cards[w.id], filter))
     .slice()
     .reverse(); // En son eklenen en üstte
 
@@ -155,21 +157,23 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
       ) : (
         <>
           {words.length > 5 && (
-            <input
-              className="search"
-              placeholder="🔎 Kendi kelimelerinde ara"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
+            <>
+              <input
+                className="search"
+                type="search"
+                placeholder="Ara: İngilizce ya da Türkçe"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              <FilterChips value={filter} onChange={setFilter} />
+            </>
           )}
           <p className="muted small">
             {selecting ? 'Silmek istediğin kelimelere dokun · ' : ''}
-            {q ? `${list.length} / ${words.length}` : words.length} kelime
+            {q || filter !== 'all' ? `${list.length} / ${words.length}` : words.length} kelime
           </p>
-          <ul>
+          <ul className="card word-rows">
             {list.map((w, i) => {
-              const card = progress.cards[w.id];
-              const st = status(card);
               const checked = !!selected?.has(w.id);
               return (
                 <li key={w.id} className={`word-row ${checked ? 'row-selected' : ''}`} id={`row-${w.id}`}>
@@ -180,16 +184,11 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
                     aria-checked={selecting ? checked : undefined}
                   >
                     {selecting && <span className={`check ${checked ? 'on' : ''}`}>{checked ? '✓' : ''}</span>}
-                    <EmojiArt emoji={w.emoji} className="row-emoji" />
-                    <span className="row-text">
-                      <b>{w.en}</b>
-                      <span className="muted">{w.tr}</span>
-                    </span>
-                    <span className={`status status-${st}`}>{STATUS_LABEL[st]}</span>
+                    <WordRowContent word={w} card={progress.cards[w.id]} />
                   </button>
                   {!selecting && (
                     <>
-                      <SpeakButton text={w.en} />
+                      <SpeakButton text={w.en} icon="🔈" />
                       <button className="icon-btn" aria-label={`Düzenle: ${w.en}`} title="Düzenle" onClick={() => setMode({ kind: 'edit', word: w })}>
                         ✏️
                       </button>
@@ -211,7 +210,7 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
           onClose={() => setViewing(null)}
           actions={(w) => (
             <button
-              className="icon-btn"
+              className="chip-btn"
               title="Düzenle"
               onClick={() => {
                 setViewing(null);

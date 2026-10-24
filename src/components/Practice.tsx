@@ -1,78 +1,113 @@
-import { TOPICS, type TopicId } from '../data/words';
-import { sourceWords, unseenWords, type SessionOptions } from '../lib/session';
+import { useState } from 'react';
+import { GOALS, LEVELS, PACKS, TOPICS, type TopicId } from '../data/words';
+import { customWords, wordById } from '../lib/catalog';
+import { dueCards, sourceWords, unseenWords, type SessionOptions } from '../lib/session';
 import type { Progress } from '../lib/storage';
 import { EmojiArt } from './EmojiArt';
-
-interface GridProps {
-  progress: Progress;
-  onStart: (opts: SessionOptions) => void;
-  /** Yalnızca ilk n konuyu göster (ana sayfa için); bitmemiş konular öne alınır. */
-  limit?: number;
-}
-
-/** Konu kartları: her biri o konudan 4 yeni kelimelik bir oturum başlatır. */
-export function TopicGrid({ progress, onStart, limit }: GridProps) {
-  const sourceList = sourceWords(progress);
-  const topics = (Object.keys(TOPICS) as TopicId[])
-    .map((id) => {
-      const total = sourceList.filter((w) => w.topic === id).length;
-      const left = total ? unseenWords(progress, id).length : 0;
-      return { id, total, left, seen: total - left };
-    })
-    .filter((t) => t.total > 0);
-  const shown = limit ? [...topics].sort((a, b) => Number(a.left === 0) - Number(b.left === 0)).slice(0, limit) : topics;
-
-  return (
-    <div className="topics">
-      {shown.map(({ id, total, left, seen }) => (
-        <button
-          key={id}
-          className="topic"
-          disabled={left === 0}
-          onClick={() => onStart({ topic: id, extraNew: Math.min(4, left) })}
-          title={left ? `${TOPICS[id].name}: 4 yeni kelime çalış` : 'Bu konudaki tüm kelimeleri öğrendin'}
-        >
-          <span className="icon-box">
-            <EmojiArt emoji={TOPICS[id].emoji} />
-          </span>
-          <span className="topic-name">{TOPICS[id].name}</span>
-          <span className="muted small">
-            {seen}/{total} kelime
-          </span>
-          <span className="topic-bar">
-            <span style={{ width: `${(seen / total) * 100}%` }} />
-          </span>
-        </button>
-      ))}
-    </div>
-  );
-}
 
 interface Props {
   progress: Progress;
   onStart: (opts: SessionOptions) => void;
+  onOpenCustom: () => void;
 }
 
-/** Alıştırma sekmesi: konuya göre çalışma, ekstra yeni kelime ve yöntemin açıklaması. */
-export function Practice({ progress, onStart }: Props) {
+const SHOWN_TOPICS = 6;
+
+/** Alıştırma sekmesi: ekstra yeni kelime, kendi kelimelerin, konular ve yöntemin açıklaması. */
+export function Practice({ progress, onStart, onOpenCustom }: Props) {
+  const [allTopics, setAllTopics] = useState(false);
+  const { goal, level } = progress.settings;
+  const pack = goal ? GOALS[goal].pack : null;
   const left = unseenWords(progress).length;
+  const own = customWords();
+  const ownSeen = own.filter((w) => progress.cards[w.id]).length;
+  const ownLeft = own.length - ownSeen;
+  const ownDue = dueCards(progress, Date.now()).filter((c) => wordById(c.wordId)?.custom).length;
+  const sourceList = sourceWords(progress).filter((w) => !w.custom);
+  const topics = (Object.keys(TOPICS) as TopicId[])
+    .map((id) => {
+      const total = sourceList.filter((w) => w.topic === id).length;
+      const seen = sourceList.filter((w) => w.topic === id && progress.cards[w.id]).length;
+      return { id, total, seen, left: total - seen };
+    })
+    .filter((t) => t.total > 0);
+  const shown = allTopics ? topics : topics.slice(0, SHOWN_TOPICS);
+
   return (
     <div className="practice">
       {left > 0 && (
-        <button className="card custom-cta" onClick={() => onStart({ extraNew: Math.min(4, left) })}>
+        <button className="card accent-row" onClick={() => onStart({ extraNew: Math.min(4, left) })}>
           <span className="icon-box">
             <EmojiArt emoji="✨" />
           </span>
-          <span>
+          <span className="list-text">
             <b>+4 yeni kelime</b>
-            <span className="muted small">Günlük limitine takılmadan biraz daha öğren.</span>
+            <span className="small">Günlük limitine takılmadan biraz daha öğren.</span>
           </span>
-          <span className="muted">›</span>
+          <span className="chev">›</span>
         </button>
       )}
 
-      <h3>Konular</h3>
-      <TopicGrid progress={progress} onStart={onStart} />
+      <div className="card list-card">
+        <button
+          className="list-row"
+          onClick={() => (ownLeft + ownDue > 0 ? onStart({ own: true, extraNew: Math.min(4, ownLeft) }) : onOpenCustom())}
+        >
+          <span className="icon-box">
+            <EmojiArt emoji="✍️" />
+          </span>
+          <span className="list-text">
+            <b>Kendi kelimelerim</b>
+            <span className="muted small">
+              {own.length === 0
+                ? 'Henüz kelime eklemedin'
+                : ownLeft + ownDue > 0
+                  ? [ownDue && `${ownDue} tekrar`, ownLeft && `${Math.min(4, ownLeft)} yeni`].filter(Boolean).join(' + ') + ' · çalış'
+                  : 'Hepsini öğrendin 🎉'}
+            </span>
+            {own.length > 0 && (
+              <span className="meter thin">
+                <span style={{ width: `${(ownSeen / own.length) * 100}%` }} />
+              </span>
+            )}
+          </span>
+          <span className="list-count">
+            {own.length ? `${ownSeen}/${own.length}` : ''} ›
+          </span>
+        </button>
+      </div>
+
+      <div className="section-head">
+        <h3>Konular</h3>
+        <span className="muted small">{pack && goal ? `${GOALS[goal].name} · ${PACKS[pack].name}` : level ? `${level} · ${LEVELS[level].name}` : ''}</span>
+      </div>
+      <div className="card list-card">
+        {shown.map(({ id, total, seen, left: topicLeft }) => (
+          <button
+            key={id}
+            className="list-row"
+            disabled={topicLeft === 0}
+            onClick={() => onStart({ topic: id, extraNew: Math.min(4, topicLeft) })}
+            title={topicLeft ? `${TOPICS[id].name}: 4 yeni kelime çalış` : 'Bu konudaki tüm kelimeleri öğrendin'}
+          >
+            <span className="icon-box">
+              <EmojiArt emoji={TOPICS[id].emoji} />
+            </span>
+            <span className="list-text">
+              <b>{TOPICS[id].name}</b>
+            </span>
+            <span className="list-count">
+              {topicLeft === 0 ? '✓ ' : ''}
+              {seen}/{total} ›
+            </span>
+          </button>
+        ))}
+        {topics.length > SHOWN_TOPICS && (
+          <button className="list-more" onClick={() => setAllTopics(!allTopics)}>
+            {allTopics ? 'Daha az göster' : `Tüm konular (${topics.length})`}
+          </button>
+        )}
+      </div>
 
       <details className="card tips">
         <summary>Bu uygulama nasıl çalışıyor?</summary>

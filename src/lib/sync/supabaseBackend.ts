@@ -62,6 +62,23 @@ export function supabaseBackend(url: string, key: string): Backend {
       fail(error);
       await client.auth.signOut();
     },
+    async sendReports(reports, userId) {
+      const { error } = await client.from('question_reports').insert(
+        reports.map((r) => ({
+          id: r.id,
+          user_id: userId,
+          word_id: r.wordId,
+          word: r.word,
+          mode: r.mode,
+          reason: r.reason,
+          note: r.note || null,
+          details: r.details,
+          created_at: new Date(r.at).toISOString(),
+        })),
+      );
+      // Aynı bildirim daha önce gitmişse (yarıda kalan gönderim) sorun değil.
+      if (error && error.code !== '23505') throw new Error(error.message);
+    },
     async load(userId) {
       const { data, error } = await client.from('user_data').select('progress, images').eq('user_id', userId).maybeSingle();
       fail(error);

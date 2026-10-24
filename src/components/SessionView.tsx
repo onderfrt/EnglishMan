@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { wordById } from '../lib/catalog';
 import type { TypedResult } from '../lib/answer';
 import { retryMode, type Step } from '../lib/session';
+import type { CardState } from '../lib/srs';
 import type { Progress } from '../lib/storage';
 import { LearnCard } from './LearnCard';
 import { EmojiArt } from './EmojiArt';
@@ -11,6 +12,8 @@ interface Props {
   initialSteps: Step[];
   progress: Progress;
   onGrade: (wordId: string, result: TypedResult) => void;
+  /** Bildirilen hatalı soruda verilen yanlış cevabı geri alır. */
+  onUngrade: (wordId: string, before: CardState | undefined, result: TypedResult) => void;
   onNote: (wordId: string, note: string) => void;
   onExit: () => void;
 }
@@ -19,10 +22,12 @@ interface Props {
 const RETRY_GAP = 3;
 const MAX_RETRIES = 2;
 
-export function SessionView({ initialSteps, progress, onGrade, onNote, onExit }: Props) {
+export function SessionView({ initialSteps, progress, onGrade, onUngrade, onNote, onExit }: Props) {
   const [steps, setSteps] = useState(initialSteps);
   const [index, setIndex] = useState(0);
   const [results, setResults] = useState<{ wordId: string; result: TypedResult }[]>([]);
+  // Cevaplanan sorudan önceki kart durumu: soru hatalı diye bildirilirse geri yüklemek için.
+  const [before, setBefore] = useState<{ index: number; card: CardState | undefined } | null>(null);
 
   const step = steps[index];
   const graded = steps.filter((s) => s.kind === 'quiz' && s.graded).length;
@@ -38,6 +43,7 @@ export function SessionView({ initialSteps, progress, onGrade, onNote, onExit }:
   const handleAnswer = (result: TypedResult) => {
     if (step.kind !== 'quiz') return;
     if (step.graded) {
+      setBefore({ index, card: progress.cards[step.wordId] });
       onGrade(step.wordId, result);
       setResults((r) => [...r, { wordId: step.wordId, result }]);
     }
@@ -51,6 +57,16 @@ export function SessionView({ initialSteps, progress, onGrade, onNote, onExit }:
         return copy;
       });
     }
+  };
+
+  // Hatalı diye bildirilen soruda yanlış cevap sayılmaz: kart eski hâline döner, tekrar sorusu çıkarılır.
+  const handleReported = (result: TypedResult | null) => {
+    if (result !== 'wrong' || step.kind !== 'quiz') return;
+    if (step.graded && before?.index === index) {
+      onUngrade(step.wordId, before.card, result);
+      setResults((r) => r.slice(0, -1));
+    }
+    setSteps((s) => s.filter((x, i) => i <= index || x.kind !== 'quiz' || x.graded || x.wordId !== step.wordId));
   };
 
   return (
@@ -85,6 +101,7 @@ export function SessionView({ initialSteps, progress, onGrade, onNote, onExit }:
             note={progress.notes[word.id]}
             autoSpeak={progress.settings.autoSpeak}
             onAnswer={handleAnswer}
+            onReported={handleReported}
             onNext={next}
           />
         </>

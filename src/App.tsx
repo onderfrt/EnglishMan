@@ -10,6 +10,7 @@ import { AuthScreen } from './components/AuthScreen';
 import { BackBar } from './components/BackBar';
 import { SyncBadge } from './components/SyncBadge';
 import { WordsTab, type WordsView } from './components/WordsTab';
+import type { Filter } from './components/WordList';
 import { GOALS, type Goal, type Level, type Word } from './data/words';
 import type { TypedResult } from './lib/answer';
 import { useBack } from './lib/back';
@@ -19,14 +20,14 @@ import { dismissRecovery, initSync, scheduleSync, useSync } from './lib/sync/eng
 import { sameJSON } from './lib/sync/merge';
 import { buildSession, type SessionOptions, type Step } from './lib/session';
 import { setPreferredVoice } from './lib/speech';
-import { newCard, review, type Grade } from './lib/srs';
+import { newCard, review, type CardState, type Grade } from './lib/srs';
 import { dayKey, loadProgress, saveProgress, type Progress, type Theme } from './lib/storage';
 
 type Tab = 'home' | 'words' | 'practice' | 'settings';
 
 const TABS: [Tab, string][] = [
   ['home', 'Ana sayfa'],
-  ['words', 'Kelimelerim'],
+  ['words', 'Kelimeler'],
   ['practice', 'Alıştırma'],
   ['settings', 'Profil'],
 ];
@@ -59,6 +60,8 @@ export default function App() {
   const [authOpen, setAuthOpen] = useState(false);
   // Ana sayfadaki hızlı ekleme: Kelimelerim'de bu kelimeyle doldurulmuş form açılır.
   const [quickAdd, setQuickAdd] = useState<{ en: string; n: number } | null>(null);
+  // Ana sayfadaki "Öğrendiklerin" sayacından gelince hazır kelimeler öğrenilenlere süzülü açılır.
+  const [wordsFilter, setWordsFilter] = useState<{ filter: Filter; n: number } | null>(null);
   const sync = useSync();
 
   useEffect(() => saveProgress(progress), [progress]);
@@ -119,6 +122,27 @@ export default function App() {
     });
   };
 
+  const ungrade = (wordId: string, before: CardState | undefined, result: TypedResult) => {
+    const key = dayKey(Date.now());
+    setProgress((p) => {
+      const cards = { ...p.cards };
+      if (before) cards[wordId] = before;
+      else delete cards[wordId];
+      const day = p.days[key];
+      const days = day
+        ? {
+            ...p.days,
+            [key]: {
+              reviews: Math.max(0, day.reviews - 1),
+              correct: Math.max(0, day.correct - (result === 'wrong' ? 0 : 1)),
+              newLearned: Math.max(0, day.newLearned - (before ? 0 : 1)),
+            },
+          }
+        : p.days;
+      return { ...p, cards, days };
+    });
+  };
+
   const saveCustomWord = (word: Word) =>
     setProgress((p) => ({
       ...p,
@@ -166,7 +190,10 @@ export default function App() {
   // Geri tuşu (ekrandaki ya da telefonunki): oturumdan, seçim ekranlarından ve sekmelerden ana sayfaya döner.
   useBack(tab !== 'home', () => setTab('home'));
   useEffect(() => {
-    if (tab !== 'words') setQuickAdd(null);
+    if (tab !== 'words') {
+      setQuickAdd(null);
+      setWordsFilter(null);
+    }
   }, [tab]);
   useBack(picking !== null, () => setPicking(null));
   useBack(!!session, endSession);
@@ -249,6 +276,7 @@ export default function App() {
           initialSteps={session}
           progress={progress}
           onGrade={grade}
+          onUngrade={ungrade}
           onNote={setNote}
           onExit={endSession}
         />
@@ -258,19 +286,21 @@ export default function App() {
 
   return withOverlay(
     <main className="app">
-      {tab !== 'home' && <BackBar title={TABS.find(([id]) => id === tab)![1]} />}
+      {tab !== 'home' && <h1 className="page-title">{tab === 'settings' ? 'Profil' : TABS.find(([id]) => id === tab)![1]}</h1>}
       {tab === 'home' && (
         <Home
           progress={progress}
           now={now}
-          initial={sync.user?.email ? sync.user.email[0].toLocaleUpperCase('tr') : null}
           onQuickAdd={(en) => {
             setQuickAdd((q) => ({ en, n: (q?.n ?? 0) + 1 }));
             setWordsView('custom');
             setTab('words');
           }}
-          onOpenPractice={() => setTab('practice')}
-          onOpenProfile={() => (sync.configured && !sync.user ? openLogin() : setTab('settings'))}
+          onOpenLearned={() => {
+            setWordsFilter((f) => ({ filter: 'learned', n: (f?.n ?? 0) + 1 }));
+            setWordsView('builtin');
+            setTab('words');
+          }}
           onStart={start}
           onChangeGoal={() => setPicking('goal')}
           onChangeLevel={() => setPicking('level')}
@@ -292,10 +322,20 @@ export default function App() {
           onDelete={deleteCustomWords}
           onImport={importCustomWords}
           startWith={quickAdd?.en}
-          key={quickAdd?.n ?? 0}
+          initialFilter={wordsFilter?.filter}
+          key={`${quickAdd?.n ?? 0}-${wordsFilter?.n ?? 0}`}
         />
       )}
-      {tab === 'practice' && <Practice progress={progress} onStart={start} />}
+      {tab === 'practice' && (
+        <Practice
+          progress={progress}
+          onStart={start}
+          onOpenCustom={() => {
+            setWordsView('custom');
+            setTab('words');
+          }}
+        />
+      )}
       {tab === 'settings' && (
         <SettingsView
           progress={progress}

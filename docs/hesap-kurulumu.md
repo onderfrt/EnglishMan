@@ -82,6 +82,40 @@ VITE_SUPABASE_URL=https://abcdefgh.supabase.co
 VITE_SUPABASE_ANON_KEY=...
 ```
 
+## 6. Hatalı soru bildirimleri
+
+Oturumda her sorunun altında **⚑ Hatalı soruyu bildir** bağlantısı var. Bildirimlerin sana ulaşması için Supabase'te
+**SQL Editor → New query**'ye aşağıdakini yapıştırıp **Run**'a bas (bir kez yapman yeterli):
+
+```sql
+create table public.question_reports (
+  id text primary key,
+  user_id uuid references auth.users (id) on delete set null,
+  word_id text not null,
+  word text not null,
+  mode text not null,
+  reason text not null,
+  note text,
+  details jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  resolved boolean not null default false
+);
+
+alter table public.question_reports enable row level security;
+
+-- Herkes (hesabı olmayanlar da) bildirim gönderebilir ama kimse başkasının bildirimini okuyamaz.
+create policy "anyone can report" on public.question_reports
+  for insert to anon, authenticated
+  with check (user_id is null or user_id = auth.uid());
+```
+
+Bildirimleri **Table Editor → question_reports**'ta görürsün: hangi kelime, hangi soru tipi, sebep, kullanıcının
+notu ve `details` sütununda sorunun gösterilen hâli (şıklar, doğru cevap, kullanıcının cevabı). Düzelttiğin
+bildirimin `resolved` alanını `true` yapabilirsin.
+
+- Tablo henüz yoksa ya da internet yoksa bildirimler cihazda bekler ve sonraki açılışta yeniden gönderilir.
+- Kullanıcı yanlış cevapladığı bir soruyu bildirirse o yanlış tekrar planına işlenmez.
+
 ## Nasıl çalışır?
 
 - Hesap açınca o cihazdaki ilerleme, kendi kelimeler ve fotoğraflar hesaba taşınır.

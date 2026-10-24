@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { clearImages, getImageState, onImagesChange, replaceImageState } from '../images';
 import { emptyProgress, type Progress } from '../storage';
+import { markSent, pendingReports } from '../reports';
 import { AuthError, createBackend, type Backend, type User } from './backend';
 import { mergeImages, mergeProgress, sameJSON } from './merge';
 
@@ -70,6 +71,7 @@ export async function initSync(h: Host): Promise<void> {
   const user = await backend.getUser();
   set({ configured: true, ready: true });
   if (user) await handleSignedIn(user);
+  void flushReports();
 
   onImagesChange(scheduleSync);
   document.addEventListener('visibilitychange', () => {
@@ -77,7 +79,28 @@ export async function initSync(h: Host): Promise<void> {
     if (document.visibilityState === 'hidden' && timer) flush();
     if (document.visibilityState === 'visible') void syncNow();
   });
-  window.addEventListener('online', () => void syncNow());
+  window.addEventListener('online', () => {
+    void syncNow();
+    void flushReports();
+  });
+}
+
+let sendingReports = false;
+
+/** Sırada bekleyen hatalı soru bildirimlerini sunucuya gönderir (sunucu yoksa cihazda bekler). */
+export async function flushReports(): Promise<boolean> {
+  const list = pendingReports();
+  if (!backend?.sendReports || !list.length || sendingReports) return false;
+  sendingReports = true;
+  try {
+    await backend.sendReports(list, state.user?.id ?? null);
+    markSent(list.map((r) => r.id));
+    return true;
+  } catch {
+    return false;
+  } finally {
+    sendingReports = false;
+  }
 }
 
 async function handleSignedIn(user: User) {
