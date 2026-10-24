@@ -10,7 +10,7 @@ import { GOALS, type Goal, type Level, type Word } from './data/words';
 import type { TypedResult } from './lib/answer';
 import { useBack } from './lib/back';
 import { setCustomWords } from './lib/catalog';
-import { removeUserImage } from './lib/images';
+import { removeUserImages } from './lib/images';
 import { buildSession, type SessionOptions, type Step } from './lib/session';
 import { setPreferredVoice } from './lib/speech';
 import { newCard, review, type Grade } from './lib/srs';
@@ -81,17 +81,20 @@ export default function App() {
         : [...p.customWords, word],
     }));
 
-  const deleteCustomWord = (id: string) => {
-    removeUserImage(id);
+  const deleteCustomWords = (ids: string[]) => {
+    const gone = new Set(ids);
+    removeUserImages(ids);
     setProgress((p) => {
-      const { [id]: _card, ...cards } = p.cards;
-      const { [id]: _note, ...notes } = p.notes;
-      return { ...p, cards, notes, customWords: p.customWords.filter((w) => w.id !== id) };
+      const keep = <T,>(rec: Record<string, T>) => Object.fromEntries(Object.entries(rec).filter(([id]) => !gone.has(id)));
+      return { ...p, cards: keep(p.cards), notes: keep(p.notes), customWords: p.customWords.filter((w) => !gone.has(w.id)) };
     });
   };
 
-  const importCustomWords = (words: Word[]) =>
-    setProgress((p) => ({ ...p, customWords: [...p.customWords, ...words] }));
+  const importCustomWords = (added: Word[], updated: Word[]) =>
+    setProgress((p) => {
+      const byId = new Map(updated.map((w) => [w.id, w]));
+      return { ...p, customWords: [...p.customWords.map((w) => byId.get(w.id) ?? w), ...added] };
+    });
 
   const setNote = (wordId: string, note: string) =>
     setProgress((p) => {
@@ -200,7 +203,7 @@ export default function App() {
           now={now}
           level={progress.settings.level ?? (goal && GOALS[goal].pack ? 'B2' : 'B1')}
           onSave={saveCustomWord}
-          onDelete={deleteCustomWord}
+          onDelete={deleteCustomWords}
           onImport={importCustomWords}
         />
       )}

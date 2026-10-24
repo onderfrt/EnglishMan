@@ -1,5 +1,5 @@
 import type { Level, PartOfSpeech, Word } from '../data/words';
-import { allWords } from './catalog';
+import { allWords, customWords } from './catalog';
 
 /** Kullanıcının bir kelime için doldurduğu alanlar. */
 export interface CustomWordInput {
@@ -45,6 +45,7 @@ export function toCustomWord(input: CustomWordInput, id: string, level: Level): 
     level,
     ...(synonyms.length && { synonyms }),
     custom: true,
+    updatedAt: Date.now(),
   };
 }
 
@@ -68,14 +69,26 @@ export function findDuplicate(en: string, exceptId?: string): Word | undefined {
 
 // ---------- Toplu içe aktarma ----------
 
+export type ImportStatus = 'new' | 'update' | 'unchanged' | 'builtin' | 'repeat' | 'invalid';
+
 export interface ImportRow {
   line: number;
   input: CustomWordInput;
-  status: 'new' | 'duplicate' | 'invalid';
-  /** Kopya ise uygulamada var olan kelime. */
+  status: ImportStatus;
+  /** Uygulamada aynı İngilizce kelime (kendi kelimen ya da hazır kelime). */
   existing?: Word;
+  /** "update" satırında değişecek alanlar. */
+  changes?: Partial<Pick<CustomWordInput, 'tr' | 'example' | 'exampleTr'>>;
   /** Anlam satırda yoktu, sözlükten önerildi. */
   autoMeaning?: boolean;
+}
+
+/** Güncellenebilen alanlar ve önizlemede görünen adları. */
+export const UPDATABLE = { tr: 'anlam', example: 'örnek cümle', exampleTr: 'çeviri' } as const;
+
+/** Kendi kelimeye dosyadaki dolu alanları uygular (boş alanlar mevcut değeri korur). */
+export function applyChanges(word: Word, changes: ImportRow['changes']): Word {
+  return { ...word, ...changes, updatedAt: Date.now() };
 }
 
 /** "a,b,"c, d"" gibi tırnaklı CSV satırını ayırır. */
@@ -126,22 +139,40 @@ const HEADER = /^(word|kelime|ingilizce|english|term)\b/i;
  */
 export function parseImport(text: string, meaningFor?: (en: string) => string): ImportRow[] {
   const seen = new Set<string>();
+  const ownByEn = new Map(customWords().map((w) => [w.en.toLowerCase(), w]));
   const rows: ImportRow[] = [];
   text
-    .replace(/^﻿/, '')
+    .replace(/^\uFEFF/, '')
     .split(/\r?\n/)
     .forEach((raw, i) => {
       if (!raw.trim()) return;
-      const [en = '', given = '', example = '', exampleTr = ''] = splitLine(raw).map(clean);
+      const [en = '', tr = '', example = '', exampleTr = ''] = splitLine(raw).map(clean);
       if (i === 0 && HEADER.test(en)) return; // Başlık satırı
-      const auto = !given && en && meaningFor ? meaningFor(en) : '';
-      const tr = given || auto;
-      const input: CustomWordInput = { ...EMPTY_INPUT, en, tr, example, exampleTr };
       const key = en.toLowerCase();
-      const existing = findDuplicate(en);
-      const status = !en || !tr ? 'invalid' : existing || seen.has(key) ? 'duplicate' : 'new';
-      if (status === 'new') seen.add(key);
-      rows.push({ line: i + 1, input, status, existing, ...(auto && { autoMeaning: true }) });
+      const input: CustomWordInput = { ...EMPTY_INPUT, en, tr, example, exampleTr };
+      const line = i + 1;
+      if (!en) return rows.push({ line, input, status: 'invalid' });
+      if (seen.has(key)) return rows.push({ line, input, status: 'repeat' });
+      seen.add(key);
+
+      // Kendi kelimelerinde varsa: dosyadaki dolu ve farklı alanlar güncellenir (ör. sonradan örnek cümle eklemek).
+      const own = ownByEn.get(key);
+      if (own) {
+        const changes: ImportRow['changes'] = {};
+        for (const f of Object.keys(UPDATABLE) as (keyof typeof UPDATABLE)[]) {
+          if (input[f] && input[f] !== own[f]) changes[f] = input[f];
+        }
+        const status = Object.keys(changes).length ? 'update' : 'unchanged';
+        return rows.push({ line, input, status, existing: own, ...(status === 'update' && { changes }) });
+      }
+
+      const builtin = findDuplicate(en);
+      if (builtin) return rows.push({ line, input, status: 'builtin', existing: builtin });
+
+      // Yeni kelime: anlam yoksa sözlükten önerilir.
+      const auto = !tr && meaningFor ? meaningFor(en) : '';
+      if (!tr && !auto) return rows.push({ line, input, status: 'invalid' });
+      rows.push({ line, input: { ...input, tr: tr || auto }, status: 'new', ...(auto && { autoMeaning: true }) });
     });
   return rows;
 }

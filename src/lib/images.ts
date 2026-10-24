@@ -41,8 +41,14 @@ export function useUserImage(wordId: string): string | undefined {
 }
 
 export function removeUserImage(wordId: string): void {
+  removeUserImages([wordId]);
+}
+
+/** Birden çok kelimenin görselini tek seferde siler (toplu silmede depolama yalnızca bir kez yazılır). */
+export function removeUserImages(wordIds: string[]): void {
+  if (!wordIds.some((id) => id in images)) return;
   const next = { ...images };
-  delete next[wordId];
+  for (const id of wordIds) delete next[id];
   commit(next);
 }
 

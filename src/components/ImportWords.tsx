@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Level, Word } from '../data/words';
-import { importTemplate, newCustomId, parseImport, toCustomWord } from '../lib/customWords';
+import { applyChanges, importTemplate, newCustomId, parseImport, toCustomWord, UPDATABLE, type ImportStatus } from '../lib/customWords';
 import { useBack } from '../lib/back';
 import { bestMeaning, loadDictionary, lookup } from '../lib/dictionary';
 import { downloadText } from '../lib/download';
@@ -8,13 +8,17 @@ import { BackBar } from './BackBar';
 
 interface Props {
   level: Level;
-  onImport: (words: Word[]) => void;
+  /** Yeni kelimeler ve güncellenen kendi kelimeler. */
+  onImport: (added: Word[], updated: Word[]) => void;
   onClose: () => void;
 }
 
-const STATUS = {
+const STATUS: Record<ImportStatus, { label: string; className: string }> = {
   new: { label: 'Eklenecek', className: 'status-mastered' },
-  duplicate: { label: 'Zaten var, atlanacak', className: 'status-learning' },
+  update: { label: 'Güncellenecek', className: 'status-update' },
+  unchanged: { label: 'Değişiklik yok', className: 'status-new' },
+  builtin: { label: 'Hazır listede var, atlanacak', className: 'status-learning' },
+  repeat: { label: 'Dosyada tekrar, atlanacak', className: 'status-learning' },
   invalid: { label: 'Anlam eksik', className: 'status-wrong' },
 };
 
@@ -29,10 +33,19 @@ export function ImportWords({ level, onImport, onClose }: Props) {
   // Yalnızca İngilizce kelime yazılan satırlarda anlam sözlükten önerilir.
   const rows = useMemo(() => parseImport(text, (en) => bestMeaning(lookup(en, dict))), [text, dict]);
   const fresh = rows.filter((r) => r.status === 'new');
+  const updates = rows.filter((r) => r.status === 'update');
+  const skipped = rows.length - fresh.length - updates.length;
 
   const add = () => {
-    onImport(fresh.map((r) => toCustomWord(r.input, newCustomId(), level)));
+    onImport(
+      fresh.map((r) => toCustomWord(r.input, newCustomId(), level)),
+      updates.map((r) => applyChanges(r.existing!, r.changes)),
+    );
   };
+
+  const actionLabel = [fresh.length && `${fresh.length} kelimeyi ekle`, updates.length && `${updates.length} kelimeyi güncelle`]
+    .filter(Boolean)
+    .join(', ');
 
   useBack(true, onClose);
 
@@ -49,6 +62,10 @@ export function ImportWords({ level, onImport, onClose }: Props) {
           <li>Yalnızca İngilizce kelime yazarsan anlamı sözlükten önerilir; eklemeden önce önizlemede kontrol et.</li>
           <li>Excel ya da Google E-Tablolar'dan sütunları kopyalayıp yapıştırabilirsin.</li>
           <li>Quizlet ve Anki'den dışa aktardığın listeler de çalışır.</li>
+          <li>
+            Kendi kelimelerinde olan bir kelimeyi yeniden yüklersen <b>güncellenir</b>: dosyadaki dolu alanlar (ör. sonradan
+            eklediğin örnek cümle) eskisinin yerine geçer, boş alanlar olduğu gibi kalır.
+          </li>
         </ul>
         <textarea
           className="import-text"
@@ -86,8 +103,8 @@ export function ImportWords({ level, onImport, onClose }: Props) {
       {rows.length > 0 && (
         <div className="card">
           <p className="prompt">
-            Önizleme · {fresh.length} yeni kelime
-            {rows.length > fresh.length ? `, ${rows.length - fresh.length} satır atlanacak` : ''}
+            Önizleme · {fresh.length} yeni, {updates.length} güncellenecek
+            {skipped ? `, ${skipped} satır atlanacak` : ''}
           </p>
           <ul className="import-preview">
             {rows.map((r) => (
@@ -99,8 +116,13 @@ export function ImportWords({ level, onImport, onClose }: Props) {
                     {r.autoMeaning && <span className="sugg-tag"> · 📖 sözlükten</span>}
                   </span>
                   {r.input.example && <span className="muted small">“{r.input.example}”</span>}
-                  {r.status === 'duplicate' && r.existing && (
+                  {r.status === 'builtin' && r.existing && (
                     <span className="muted small">Uygulamadaki anlamı: {r.existing.tr}</span>
+                  )}
+                  {r.status === 'update' && r.changes && (
+                    <span className="small update-note">
+                      Değişecek: {Object.keys(r.changes).map((f) => UPDATABLE[f as keyof typeof UPDATABLE]).join(', ')}
+                    </span>
                   )}
                 </span>
                 <span className={`status ${STATUS[r.status].className}`}>{STATUS[r.status].label}</span>
@@ -114,8 +136,8 @@ export function ImportWords({ level, onImport, onClose }: Props) {
         <button className="btn" onClick={onClose}>
           Vazgeç
         </button>
-        <button className="btn btn-primary" onClick={add} disabled={fresh.length === 0}>
-          {fresh.length ? `${fresh.length} kelimeyi ekle` : 'Kelime ekle'}
+        <button className="btn btn-primary" onClick={add} disabled={!actionLabel}>
+          {actionLabel || 'Kelime ekle'}
         </button>
       </div>
     </div>

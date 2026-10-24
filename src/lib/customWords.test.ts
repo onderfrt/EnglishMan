@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { setCustomWords } from './catalog';
-import { EMPTY_INPUT, parseImport, splitLine, toCustomWord, toInput } from './customWords';
+import { applyChanges, EMPTY_INPUT, parseImport, splitLine, toCustomWord, toInput } from './customWords';
 import { buildSession, sourceWords } from './session';
 import { emptyProgress } from './storage';
 
@@ -22,7 +22,7 @@ describe('splitLine', () => {
 describe('parseImport', () => {
   it('skips the header, flags duplicates and invalid lines', () => {
     const rows = parseImport('kelime;anlam\nabandon;terk etmek\nborrow;ödünç almak\nabandon;bırakmak\nsadece kelime\n\n');
-    expect(rows.map((r) => r.status)).toEqual(['new', 'duplicate', 'duplicate', 'invalid']);
+    expect(rows.map((r) => r.status)).toEqual(['new', 'builtin', 'repeat', 'invalid']);
     expect(rows[0].input).toMatchObject({ en: 'abandon', tr: 'terk etmek' });
     expect(rows[1].existing?.en).toBe('borrow'); // hazır listede zaten var
   });
@@ -56,5 +56,21 @@ describe('parseImport with dictionary', () => {
     expect(rows[0]).toMatchObject({ status: 'new', autoMeaning: true, input: { tr: 'rastlantısal' } });
     expect(rows[1].autoMeaning).toBeUndefined();
     expect(rows[2].status).toBe('invalid');
+  });
+});
+
+describe('import updates own words', () => {
+  it('updates an own word when the file adds an example, keeps it when nothing is new', () => {
+    const own = toCustomWord({ ...EMPTY_INPUT, en: 'zeal', tr: 'şevk' }, 'custom:z', 'B2');
+    setCustomWords([own]);
+    const [row] = parseImport('zeal ; şevk ; She worked with great zeal. ; Büyük bir şevkle çalıştı.', () => 'sözlük');
+    expect(row).toMatchObject({ status: 'update', changes: { example: 'She worked with great zeal.', exampleTr: 'Büyük bir şevkle çalıştı.' } });
+    expect(row.changes).not.toHaveProperty('tr');
+    const updated = applyChanges(own, row.changes);
+    expect(updated).toMatchObject({ id: 'custom:z', tr: 'şevk', example: 'She worked with great zeal.' });
+    // Yalnızca kelime yazılırsa: değişiklik yok, sözlük anlamı mevcut anlamın üzerine yazılmaz.
+    expect(parseImport('Zeal', () => 'sözlük')[0].status).toBe('unchanged');
+    // Anlam düzeltilebilir.
+    expect(parseImport('zeal ; heves')[0]).toMatchObject({ status: 'update', changes: { tr: 'heves' } });
   });
 });

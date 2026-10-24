@@ -1238,3 +1238,52 @@ select {
   border-color: var(--primary);
   color: #fff;
 }
+
+.status-update {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.update-note {
+  color: var(--primary);
+}
+
+/* Toplu seçim */
+.select-bar {
+  position: sticky;
+  top: calc(64px + env(safe-area-inset-top));
+  z-index: 9;
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 8px 0;
+  background: var(--bg);
+}
+.select-bar .btn {
+  flex: 1;
+  padding: 10px 6px;
+  font-size: 14px;
+}
+.select-bar .btn-danger:not(:disabled) {
+  background: var(--bad);
+  color: #fff;
+}
+.check {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: 2px solid var(--border);
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+}
+.check.on {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.row-selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}

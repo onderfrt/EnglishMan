@@ -25,6 +25,8 @@ export interface Word {
   synonyms?: string[];
   /** Kullanıcının kendi eklediği kelime (seviyesi gösterilmez, düzenlenebilir). */
   custom?: boolean;
+  /** Kendi kelimenin son değiştirilme zamanı (cihazlar arası eşitlemede hangisinin yeni olduğunu bilmek için). */
+  updatedAt?: number;
 }
 
 export const LEVELS: Record<Level, { name: string; description: string }> = {

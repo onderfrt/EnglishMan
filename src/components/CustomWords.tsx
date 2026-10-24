@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Level, Word } from '../data/words';
+import { useBack } from '../lib/back';
 import { customWords } from '../lib/catalog';
 import type { Progress } from '../lib/storage';
 import { CustomWordForm } from './CustomWordForm';
@@ -14,8 +15,8 @@ interface Props {
   now: number;
   level: Level;
   onSave: (word: Word) => void;
-  onDelete: (id: string) => void;
-  onImport: (words: Word[]) => void;
+  onDelete: (ids: string[]) => void;
+  onImport: (added: Word[], updated: Word[]) => void;
 }
 
 type Mode = { kind: 'list' } | { kind: 'edit'; word?: Word } | { kind: 'import' };
@@ -26,7 +27,10 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport }
   const [viewing, setViewing] = useState<number | null>(null);
   const [query, setQuery] = useState('');
   const [message, setMessage] = useState('');
+  // Toplu seçim: null = seçim modu kapalı
+  const [selected, setSelected] = useState<Set<string> | null>(null);
   const words = customWords();
+  useBack(selected !== null, () => setSelected(null));
 
   if (mode.kind === 'edit') {
     return (
@@ -42,7 +46,7 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport }
         onDelete={
           mode.word &&
           (() => {
-            onDelete(mode.word!.id);
+            onDelete([mode.word!.id]);
             setMessage(`🗑️ “${mode.word!.en}” silindi.`);
             setMode({ kind: 'list' });
           })
@@ -56,9 +60,13 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport }
     return (
       <ImportWords
         level={level}
-        onImport={(ws) => {
-          onImport(ws);
-          setMessage(`✅ ${ws.length} kelime eklendi.`);
+        onImport={(added, updated) => {
+          onImport(added, updated);
+          setMessage(
+            `✅ ${[added.length && `${added.length} kelime eklendi`, updated.length && `${updated.length} kelime güncellendi`]
+              .filter(Boolean)
+              .join(', ')}.`,
+          );
           setMode({ kind: 'list' });
         }}
         onClose={() => setMode({ kind: 'list' })}
@@ -72,17 +80,65 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport }
     .slice()
     .reverse(); // En son eklenen en üstte
 
+  const selecting = selected !== null;
+  const toggle = (id: string) =>
+    setSelected((sel) => {
+      const next = new Set(sel);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const allVisibleSelected = selecting && list.length > 0 && list.every((w) => selected.has(w.id));
+  const deleteSelected = () => {
+    if (!selected?.size) return;
+    if (!confirm(`${selected.size} kelime, ilerlemeleri ve fotoğraflarıyla birlikte silinecek. Emin misin?`)) return;
+    onDelete([...selected]);
+    setMessage(`🗑️ ${selected.size} kelime silindi.`);
+    setSelected(null);
+  };
+
   return (
     <div className="word-list custom-words">
-      <div className="row">
-        <button className="btn btn-primary" onClick={() => setMode({ kind: 'edit' })}>
-          ＋ Kelime ekle
-        </button>
-        <button className="btn" onClick={() => setMode({ kind: 'import' })}>
-          📥 Toplu ekle
-        </button>
-      </div>
-      {message && <p className="small">{message}</p>}
+      {selecting ? (
+        <div className="select-bar">
+          <button className="btn" onClick={() => setSelected(null)}>
+            ✕ Bitti
+          </button>
+          <button
+            className="btn"
+            onClick={() =>
+              setSelected((sel) => {
+                const next = new Set(sel);
+                for (const w of list) {
+                  if (allVisibleSelected) next.delete(w.id);
+                  else next.add(w.id);
+                }
+                return next;
+              })
+            }
+          >
+            {allVisibleSelected ? 'Seçimi kaldır' : q ? `Bulunanları seç (${list.length})` : 'Tümünü seç'}
+          </button>
+          <button className="btn btn-danger" onClick={deleteSelected} disabled={!selected.size}>
+            🗑️ Sil ({selected.size})
+          </button>
+        </div>
+      ) : (
+        <div className="row">
+          <button className="btn btn-primary" onClick={() => setMode({ kind: 'edit' })}>
+            ＋ Kelime ekle
+          </button>
+          <button className="btn" onClick={() => setMode({ kind: 'import' })}>
+            📥 Toplu ekle
+          </button>
+          {words.length > 0 && (
+            <button className="btn" onClick={() => setSelected(new Set())}>
+              ☑️ Seç
+            </button>
+          )}
+        </div>
+      )}
+      {message && !selecting && <p className="small">{message}</p>}
 
       {words.length === 0 ? (
         <div className="card center">
@@ -103,14 +159,24 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport }
               onChange={(e) => setQuery(e.target.value)}
             />
           )}
-          <p className="muted small">{words.length} kelime</p>
+          <p className="muted small">
+            {selecting ? 'Silmek istediğin kelimelere dokun · ' : ''}
+            {q ? `${list.length} / ${words.length}` : words.length} kelime
+          </p>
           <ul>
             {list.map((w, i) => {
               const card = progress.cards[w.id];
               const st = status(card);
+              const checked = !!selected?.has(w.id);
               return (
-                <li key={w.id} className="word-row" id={`row-${w.id}`}>
-                  <button className="word-row-main" onClick={() => setViewing(i)}>
+                <li key={w.id} className={`word-row ${checked ? 'row-selected' : ''}`} id={`row-${w.id}`}>
+                  <button
+                    className="word-row-main"
+                    onClick={() => (selecting ? toggle(w.id) : setViewing(i))}
+                    role={selecting ? 'checkbox' : undefined}
+                    aria-checked={selecting ? checked : undefined}
+                  >
+                    {selecting && <span className={`check ${checked ? 'on' : ''}`}>{checked ? '✓' : ''}</span>}
                     <EmojiArt emoji={w.emoji} className="row-emoji" />
                     <span className="row-text">
                       <b>{w.en}</b>
@@ -118,10 +184,14 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport }
                     </span>
                     <span className={`status status-${st}`}>{STATUS_LABEL[st]}</span>
                   </button>
-                  <SpeakButton text={w.en} />
-                  <button className="icon-btn" aria-label={`Düzenle: ${w.en}`} title="Düzenle" onClick={() => setMode({ kind: 'edit', word: w })}>
-                    ✏️
-                  </button>
+                  {!selecting && (
+                    <>
+                      <SpeakButton text={w.en} />
+                      <button className="icon-btn" aria-label={`Düzenle: ${w.en}`} title="Düzenle" onClick={() => setMode({ kind: 'edit', word: w })}>
+                        ✏️
+                      </button>
+                    </>
+                  )}
                 </li>
               );
             })}
