@@ -6,12 +6,15 @@ export function SpeakButton({
   label = 'Dinle',
   icon = '🔊',
   className = 'icon-btn',
+  caption,
 }: {
   text: string;
   rate?: number;
   label?: string;
   icon?: string;
   className?: string;
+  /** Simgenin yanında görünen yazı (ör. "Dinle"). */
+  caption?: string;
 }) {
   if (!canSpeak()) return null;
   return (
@@ -26,6 +29,7 @@ export function SpeakButton({
       }}
     >
       {icon}
+      {caption && <span>{caption}</span>}
     </button>
   );
 }

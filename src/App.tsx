@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Home } from './components/Home';
+import { Intro, introSeen } from './components/Intro';
 import { NavIcon } from './components/NavIcon';
 import { Practice } from './components/Practice';
 import { GoalPicker } from './components/GoalPicker';
@@ -59,6 +60,8 @@ export default function App() {
   const [now, setNow] = useState(Date.now());
   const [picking, setPicking] = useState<'goal' | 'level' | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
+  // İlk açılışta kısa tanıtım (Profil'den yeniden açılabilir).
+  const [intro, setIntro] = useState(() => !progress.settings.goal && !introSeen());
   // Ana sayfadaki hızlı ekleme: Kelimelerim'de bu kelimeyle doldurulmuş form açılır.
   const [quickAdd, setQuickAdd] = useState<{ en: string; n: number } | null>(null);
   // Ana sayfadaki "Öğrendiklerin" sayacından gelince hazır kelimeler öğrenilenlere süzülü açılır.
@@ -215,6 +218,7 @@ export default function App() {
   }, [tab]);
   useBack(picking !== null, () => setPicking(null));
   useBack(!!session, endSession);
+  useBack(intro, () => setIntro(false));
 
   const setLevel = (level: Level) => {
     setProgress((p) => ({ ...p, settings: { ...p.settings, level } }));
@@ -256,6 +260,8 @@ export default function App() {
       {overlay}
     </WordActionsContext.Provider>
   );
+
+  if (intro) return withOverlay(<Intro onDone={() => setIntro(false)} />);
 
   // İlk açılış: önce hedef, Genel İngilizce seçildiyse ardından seviye.
   if (!goal || picking === 'goal') {
@@ -360,6 +366,7 @@ export default function App() {
           onChangeGoal={() => setPicking('goal')}
           onChangeLevel={() => setPicking('level')}
           onLogin={openLogin}
+          onShowIntro={() => setIntro(true)}
           now={now}
         />
       )}

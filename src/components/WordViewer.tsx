@@ -167,7 +167,7 @@ export function WordViewer({ words, index, progress, now, onIndexChange, onClose
 
       <div className="viewer-nav">
         <button className="btn prev-btn" onClick={() => go(-1)} disabled={!hasPrev} aria-label="Önceki kelime">
-          ‹
+          ‹ Önceki
         </button>
         {hidden ? (
           <button className="btn btn-primary" onClick={() => setRevealed(true)}>

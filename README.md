@@ -3,6 +3,9 @@
 İngilizceyi öğrenirken birlikte geliştirdiğimiz, kendi kendine test edilen bir öğrenme uygulaması.
 İlk modül: **kelime öğrenimi**. 529 kelime: A1'den C2'ye 6 seviye ve sınavlar için **Akademik Çekirdek** paketi.
 
+İlk açılışta dört sayfalık kısa bir tanıtım uygulamayı anlatır (Atla ile geçilebilir; Profil → Yardım → Uygulama
+tanıtımı ile yeniden açılır).
+
 ## Hedefler ve seviyeler
 
 İlk açılışta hedefini seçersin: **YDS**, **YÖKDİL**, **IELTS** ya da **Genel İngilizce**.
@@ -26,7 +29,7 @@ uygulama seni bir sonraki seviyeye davet eder. Seviyeyi ana sayfadaki seviye kar
 | **Kademeli zorluk** | Önce tanıma (İng → Tr seç), sonra hatırlama (Tr → İng seç / dinleyip seç), en son üretme (İngilizcesini yaz / duyduğunu yaz). |
 | **Bağlam** | Her kelime bir örnek cümle ve Türkçe çevirisiyle gelir; kelime cümlede vurgulanır. |
 | **Telaffuz** | Kelime ve cümleler sesli okunur (normal ve yavaş hız). Otomatik ses seçimi cihazdaki en doğal kadın sesini seçer (ör. Samantha, Aria, Google US English); Profil'den değiştirilebilir. |
-| **Hafıza ipucu (Keyword method)** | Her kelime kartında kendi hafıza ipucunu yazabilirsin (benzer ses + kısa hikâye, ör. *abolish* → “abla iş”); kartta ve yazma sorularında gösterilir, cihazlar arasında eşitlenir. |
+| **Hafıza ipucu (Keyword method)** | Her kelime kartında kendi hafıza ipucunu yazabilirsin (benzer ses + kısa hikâye, ör. *abolish* → “abla iş”). Kartta kapalı gelir, önce kendin hatırlamaya çalışırsın; yazma sorularında da ipucu olarak çıkar. Cihazlar arasında eşitlenir. |
 | **Önce hatırla** | Kelime kartında 🙈 açıkken kart kapalı gelir: önce anlamı hatırlamaya çalışırsın, sonra karta dokunup çevirirsin. |
 | **Favoriler ve Quiz** | Karttaki ♡ ile favorilere eklersin (Kelimeler → ♥ Favoriler). “Quiz ›” baktığın listedeki 10 kelimeyle hemen soru sorar; öğrenilmiş kelimelerin tekrar planı bozulmaz. |
 | **YDS tarzı sorular** | Boşluk doldurma (örnek cümle + A–E şıkları, şıklar aynı dilbilgisi biçiminde; bağlaç sorularında *although ↔ despite* gibi ayrımlar) ve eş anlamlı bulma. Sınav hedefinde daha sık çıkar. |

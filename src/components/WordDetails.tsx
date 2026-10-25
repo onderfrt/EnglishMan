@@ -17,7 +17,7 @@ interface Props {
   extras?: boolean;
 }
 
-/** Kelime kartı: kelime ve anlamı en üstte, görsel kartın ana parçası, hafıza ipucu, örnek cümle, eş anlamlılar. */
+/** Kelime kartı: küçük görsel, kelime, türü ve anlamı ortada; dinle, hafıza ipucu, örnek cümle, eş anlamlılar. */
 export function WordDetails({ word, note, editable, footer, extras = true }: Props) {
   const actions = useWordActions();
   const hint = note ?? (editable ? actions?.notes[word.id] : undefined);
@@ -26,41 +26,32 @@ export function WordDetails({ word, note, editable, footer, extras = true }: Pro
 
   return (
     <div className="word-details">
-      <div className="wd-head">
-        <div className="wd-title">
-          <span className="word-en">{word.en}</span>
-          <span className="word-tr">{word.tr}</span>
-        </div>
-        <div className="wd-side">
-          <span className="wd-pos">
-            <span className={`pos-dot pos-${word.pos.replace(' ', '-')}`} />
-            {POS_TR[word.pos]}
-            {word.custom ? '' : ` · ${word.level}`}
-          </span>
-          <span className="wd-play">
-            <SpeakButton text={word.en} rate={SLOW_RATE} label="Yavaş dinle" icon="🐢" />
-            <SpeakButton text={word.en} icon="▶" className="play-btn" />
-          </span>
-        </div>
+      {canEdit && (
+        <button
+          type="button"
+          className={`fav-btn ${favorite ? 'on' : ''}`}
+          onClick={() => actions.toggleFavorite(word.id)}
+          aria-pressed={favorite}
+          aria-label={favorite ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+          title={favorite ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+        >
+          {favorite ? '♥' : '♡'}
+        </button>
+      )}
+      <WordVisual word={word} editable={editable} compact />
+      <div className="word-en">{word.en}</div>
+      <div className="word-meta">
+        <span className={`pos-dot pos-${word.pos.replace(' ', '-')}`} />
+        {POS_TR[word.pos]}
+        {word.custom ? '' : ` · ${word.level}`}
+      </div>
+      <div className="word-tr">{word.tr}</div>
+      <div className="wd-play">
+        <SpeakButton text={word.en} icon="▶" caption="Dinle" className="pill-btn pill-primary" />
+        <SpeakButton text={word.en} rate={SLOW_RATE} label="Yavaş dinle" icon="🐢" caption="Yavaş" className="pill-btn" />
       </div>
 
-      <div className="wd-visual">
-        <WordVisual word={word} editable={editable} />
-        {canEdit && (
-          <button
-            type="button"
-            className={`fav-btn ${favorite ? 'on' : ''}`}
-            onClick={() => actions.toggleFavorite(word.id)}
-            aria-pressed={favorite}
-            aria-label={favorite ? 'Favorilerden çıkar' : 'Favorilere ekle'}
-            title={favorite ? 'Favorilerden çıkar' : 'Favorilere ekle'}
-          >
-            {favorite ? '♥' : '♡'}
-          </button>
-        )}
-      </div>
-
-      {canEdit ? <HintEditor wordId={word.id} note={hint ?? ''} onSave={actions.setNote} /> : extras && hint && <HintBox note={hint} />}
+      {canEdit ? <HintEditor wordId={word.id} note={hint ?? ''} onSave={actions.setNote} /> : extras && hint && <HintToggle note={hint} />}
 
       {(word.example || word.exampleTr) && (
         <div className="example">
@@ -93,16 +84,35 @@ export function WordDetails({ word, note, editable, footer, extras = true }: Pro
   );
 }
 
-function HintBox({ note, onEdit }: { note: string; onEdit?: () => void }) {
+/** Kapalı gelen hafıza ipucu: önce kendin hatırlamaya çalış, gerekirse aç. */
+function HintToggle({ note, onEdit, initiallyOpen = false }: { note: string; onEdit?: () => void; initiallyOpen?: boolean }) {
+  const [open, setOpen] = useState(initiallyOpen);
+  return open ? (
+    <HintBox note={note} onEdit={onEdit} onClose={() => setOpen(false)} />
+  ) : (
+    <button type="button" className="hint-chip" onClick={() => setOpen(true)} aria-expanded={false}>
+      💡 Hafıza ipucu
+    </button>
+  );
+}
+
+function HintBox({ note, onEdit, onClose }: { note: string; onEdit?: () => void; onClose?: () => void }) {
   return (
     <div className="hint-box">
       <span className="hint-label">
         💡 Hafıza ipucu
-        {onEdit && (
-          <button type="button" className="link-btn" onClick={onEdit}>
-            Düzenle
-          </button>
-        )}
+        <span>
+          {onEdit && (
+            <button type="button" className="link-btn" onClick={onEdit}>
+              Düzenle
+            </button>
+          )}
+          {onClose && (
+            <button type="button" className="link-btn" onClick={onClose} aria-label="İpucunu gizle">
+              Gizle
+            </button>
+          )}
+        </span>
       </span>
       <p>{note}</p>
     </div>
@@ -113,18 +123,20 @@ function HintBox({ note, onEdit }: { note: string; onEdit?: () => void }) {
 function HintEditor({ wordId, note, onSave }: { wordId: string; note: string; onSave: (id: string, note: string) => void }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(note);
+  // Yeni kaydedilen ipucu açık kalsın; sonraki açılışlarda kapalı gelir.
+  const [justSaved, setJustSaved] = useState(false);
   if (!editing) {
     return note ? (
-      <HintBox note={note} onEdit={() => (setDraft(note), setEditing(true))} />
+      <HintToggle key={note} note={note} initiallyOpen={justSaved} onEdit={() => (setDraft(note), setEditing(true))} />
     ) : (
-      <button type="button" className="hint-add" onClick={() => (setDraft(''), setEditing(true))}>
+      <button type="button" className="hint-chip" onClick={() => (setDraft(''), setEditing(true))}>
         💡 Hafıza ipucu ekle
-        <span className="small muted">Benzer ses, kısa bir hikâye ya da bir anı</span>
       </button>
     );
   }
   const save = () => {
     if (draft.trim() !== note) onSave(wordId, draft.trim());
+    setJustSaved(true);
     setEditing(false);
   };
   return (

@@ -19,10 +19,11 @@ interface Props {
   onChangeGoal: () => void;
   onChangeLevel: () => void;
   onLogin: () => void;
+  onShowIntro: () => void;
   now: number;
 }
 
-export function SettingsView({ progress, onChange, onChangeGoal, onChangeLevel, onLogin, now }: Props) {
+export function SettingsView({ progress, onChange, onChangeGoal, onChangeLevel, onLogin, onShowIntro, now }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
   const [voices, setVoices] = useState(englishVoices);
@@ -154,6 +155,14 @@ export function SettingsView({ progress, onChange, onChangeGoal, onChangeLevel, 
             ))}
           </div>
         </div>
+      </div>
+
+      <h4 className="group-title">Yardım</h4>
+      <div className="card list-card">
+        <button className="list-row" onClick={onShowIntro}>
+          <span className="list-text">Uygulama tanıtımı</span>
+          <span className="chev">›</span>
+        </button>
       </div>
 
       <h4 className="group-title">Veri</h4>
