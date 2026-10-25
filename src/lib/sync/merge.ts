@@ -8,7 +8,8 @@ import type { DayLog, Progress } from '../storage';
  * telefonda yapılan çalışma bilgisayardaki eski veriyle ezilmesin:
  * - Kelime tekrar kayıtları: en son çalışılan kazanır.
  * - Kendi kelimeler: en son düzenlenen kazanır; silinenler (deleted) geri gelmez.
- * - Notlar: ikisinin birleşimi; çakışmada bu cihazdaki not kalır.
+ * - Notlar (hafıza ipuçları) ve favoriler: kelime başına en son değişiklik kazanır (silme dahil);
+ *   zamanı bilinmeyen eski notlarda bu cihazdaki not kalır.
  * - Günlük istatistik: her alanın büyüğü (aynı gün iki cihazda çalışılırsa kayıp olmaz).
  * - Ayarlar: en son değiştirilen kazanır.
  * Birleştirme simetriktir ve tekrar uygulanabilir: merge(merge(a, b), b) = merge(a, b).
@@ -20,7 +21,15 @@ export function mergeProgress(local: Progress, remote: Progress | null | undefin
   const isDeleted = (id: string, at = 0) => deleted[id] !== undefined && deleted[id] >= at;
 
   const cards = mergeRecords(local.cards, remote.cards, newerCard);
-  const notes = { ...remote.notes, ...local.notes };
+  const noteAt = mergeRecords(local.noteAt ?? {}, remote.noteAt ?? {}, (a, b) => Math.max(a, b));
+  const notes: Record<string, string> = {};
+  for (const id of new Set([...Object.keys(local.notes), ...Object.keys(remote.notes), ...Object.keys(noteAt)])) {
+    const lt = local.noteAt?.[id] ?? 0;
+    const rt = remote.noteAt?.[id] ?? 0;
+    const text = lt >= rt ? (local.notes[id] ?? (lt ? undefined : remote.notes[id])) : remote.notes[id];
+    if (text) notes[id] = text;
+  }
+  const favorites = mergeRecords(local.favorites ?? {}, remote.favorites ?? {}, (a, b) => (a.at >= b.at ? a : b));
 
   const words = new Map<string, Word>();
   for (const w of [...remote.customWords, ...local.customWords]) {
@@ -32,6 +41,7 @@ export function mergeProgress(local: Progress, remote: Progress | null | undefin
     if (!words.has(id) || isDeleted(id, words.get(id)!.updatedAt)) {
       delete cards[id];
       delete notes[id];
+      delete favorites[id];
     }
   }
 
@@ -44,6 +54,8 @@ export function mergeProgress(local: Progress, remote: Progress | null | undefin
     ...local,
     cards,
     notes,
+    noteAt,
+    favorites,
     customWords: sortByOrder(customWords, local.customWords, remote.customWords),
     deleted,
     // Ses seçimi cihaza özgüdür (her cihazın sesleri farklı); hep bu cihazınki kalır.

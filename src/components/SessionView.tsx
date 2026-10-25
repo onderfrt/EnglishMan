@@ -14,7 +14,6 @@ interface Props {
   onGrade: (wordId: string, result: TypedResult) => void;
   /** Bildirilen hatalı soruda verilen yanlış cevabı geri alır. */
   onUngrade: (wordId: string, before: CardState | undefined, result: TypedResult) => void;
-  onNote: (wordId: string, note: string) => void;
   onExit: () => void;
 }
 
@@ -22,7 +21,7 @@ interface Props {
 const RETRY_GAP = 3;
 const MAX_RETRIES = 2;
 
-export function SessionView({ initialSteps, progress, onGrade, onUngrade, onNote, onExit }: Props) {
+export function SessionView({ initialSteps, progress, onGrade, onUngrade, onExit }: Props) {
   const [steps, setSteps] = useState(initialSteps);
   const [index, setIndex] = useState(0);
   const [results, setResults] = useState<{ wordId: string; result: TypedResult }[]>([]);
@@ -45,6 +44,8 @@ export function SessionView({ initialSteps, progress, onGrade, onUngrade, onNote
     if (step.graded) {
       setBefore({ index, card: progress.cards[step.wordId] });
       onGrade(step.wordId, result);
+      setResults((r) => [...r, { wordId: step.wordId, result }]);
+    } else if (step.practice) {
       setResults((r) => [...r, { wordId: step.wordId, result }]);
     }
     if (result === 'wrong') {
@@ -86,14 +87,12 @@ export function SessionView({ initialSteps, progress, onGrade, onUngrade, onNote
         <LearnCard
           key={`${index}-${step.wordId}`}
           word={word}
-          note={progress.notes[word.id] ?? ''}
           autoSpeak={progress.settings.autoSpeak}
-          onNote={(n) => onNote(word.id, n)}
           onNext={next}
         />
       ) : (
         <>
-          {!step.graded && <div className="badge badge-retry">Tekrar deneyelim</div>}
+          {!step.graded && !step.practice && <div className="badge badge-retry">Tekrar deneyelim</div>}
           <Quiz
             key={`${index}-${step.wordId}`}
             word={word}

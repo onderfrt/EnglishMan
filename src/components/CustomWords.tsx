@@ -81,7 +81,7 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
   const q = query.trim().toLowerCase();
   const list = words
     .filter((w) => !q || w.en.toLowerCase().includes(q) || w.tr.toLowerCase().includes(q))
-    .filter((w) => matchesFilter(progress.cards[w.id], filter))
+    .filter((w) => matchesFilter(w.id, progress, filter))
     .slice()
     .reverse(); // En son eklenen en üstte
 
@@ -208,16 +208,18 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
           now={now}
           onIndexChange={setViewing}
           onClose={() => setViewing(null)}
+          title="Kendi kelimelerim"
           actions={(w) => (
             <button
-              className="chip-btn"
+              className="round-btn"
+              aria-label="Düzenle"
               title="Düzenle"
               onClick={() => {
                 setViewing(null);
                 setMode({ kind: 'edit', word: w });
               }}
             >
-              ✏️ Düzenle
+              ✏️
             </button>
           )}
         />

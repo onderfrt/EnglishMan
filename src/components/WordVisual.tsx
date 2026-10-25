@@ -30,7 +30,7 @@ export function WordVisual({ word, editable = false, small = false }: { word: Wo
       {editable && (
         <div className="visual-actions">
           <button type="button" className="link-btn" onClick={() => fileRef.current?.click()}>
-            📷 {userImage ? 'Görseli değiştir' : 'Kendi görselini ekle'}
+            📷 {userImage ? 'Görseli değiştir' : 'Görsel ekle'}
           </button>
           {userImage && (
             <button type="button" className="link-btn" onClick={() => removeUserImage(word.id)}>

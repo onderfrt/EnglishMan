@@ -18,7 +18,8 @@ import { setCustomWords } from './lib/catalog';
 import { removeUserImages } from './lib/images';
 import { dismissRecovery, initSync, scheduleSync, useSync } from './lib/sync/engine';
 import { sameJSON } from './lib/sync/merge';
-import { buildSession, type SessionOptions, type Step } from './lib/session';
+import { buildSession, practiceSession, type SessionOptions, type Step } from './lib/session';
+import { WordActionsContext, type WordActions } from './lib/wordActions';
 import { setPreferredVoice } from './lib/speech';
 import { newCard, review, type CardState, type Grade } from './lib/srs';
 import { dayKey, loadProgress, saveProgress, type Progress, type Theme } from './lib/storage';
@@ -179,8 +180,25 @@ export default function App() {
       const notes = { ...p.notes };
       if (note) notes[wordId] = note;
       else delete notes[wordId];
-      return { ...p, notes };
+      return { ...p, notes, noteAt: { ...p.noteAt, [wordId]: Date.now() } };
     });
+
+  const toggleFavorite = (wordId: string) =>
+    setProgress((p) => ({
+      ...p,
+      favorites: { ...p.favorites, [wordId]: { on: !p.favorites[wordId]?.on, at: Date.now() } },
+    }));
+
+  const wordActions: WordActions = {
+    notes: progress.notes,
+    setNote,
+    isFavorite: (id) => !!progress.favorites[id]?.on,
+    toggleFavorite,
+    practice: (words) => {
+      const steps = practiceSession(progress, words.map((w) => w.id));
+      if (steps.length) setSession(steps);
+    },
+  };
 
   const endSession = () => {
     setSession(null);
@@ -233,10 +251,10 @@ export default function App() {
     />
   );
   const withOverlay = (node: ReactNode) => (
-    <>
+    <WordActionsContext.Provider value={wordActions}>
       {node}
       {overlay}
-    </>
+    </WordActionsContext.Provider>
   );
 
   // İlk açılış: önce hedef, Genel İngilizce seçildiyse ardından seviye.
@@ -277,7 +295,6 @@ export default function App() {
           progress={progress}
           onGrade={grade}
           onUngrade={ungrade}
-          onNote={setNote}
           onExit={endSession}
         />
       </main>

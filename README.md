@@ -26,7 +26,9 @@ uygulama seni bir sonraki seviyeye davet eder. Seviyeyi ana sayfadaki seviye kar
 | **Kademeli zorluk** | Önce tanıma (İng → Tr seç), sonra hatırlama (Tr → İng seç / dinleyip seç), en son üretme (İngilizcesini yaz / duyduğunu yaz). |
 | **Bağlam** | Her kelime bir örnek cümle ve Türkçe çevirisiyle gelir; kelime cümlede vurgulanır. |
 | **Telaffuz** | Kelime ve cümleler sesli okunur (normal ve yavaş hız). Otomatik ses seçimi cihazdaki en doğal kadın sesini seçer (ör. Samantha, Aria, Google US English); Profil'den değiştirilebilir. |
-| **Kişisel çağrışım (Keyword method)** | Yeni kelimeye kendi hafıza ipucunu yazabilirsin; yazma sorularında ipucu olarak gösterilir. |
+| **Hafıza ipucu (Keyword method)** | Her kelime kartında kendi hafıza ipucunu yazabilirsin (benzer ses + kısa hikâye, ör. *abolish* → “abla iş”); kartta ve yazma sorularında gösterilir, cihazlar arasında eşitlenir. |
+| **Önce hatırla** | Kelime kartında 🙈 açıkken kart kapalı gelir: önce anlamı hatırlamaya çalışırsın, sonra karta dokunup çevirirsin. |
+| **Favoriler ve Quiz** | Karttaki ♡ ile favorilere eklersin (Kelimeler → ♥ Favoriler). “Quiz ›” baktığın listedeki 10 kelimeyle hemen soru sorar; öğrenilmiş kelimelerin tekrar planı bozulmaz. |
 | **YDS tarzı sorular** | Boşluk doldurma (örnek cümle + A–E şıkları, şıklar aynı dilbilgisi biçiminde; bağlaç sorularında *although ↔ despite* gibi ayrımlar) ve eş anlamlı bulma. Sınav hedefinde daha sık çıkar. |
 | **Hatalı kelimeyi hemen tekrar** | Oturumda yanlış bilinen kelime birkaç soru sonra tekrar (daha kolay biçimde) sorulur. |
 | **Hatalı soru bildirimi** | Her sorunun altındaki **⚑ Hatalı soruyu bildir** ile sebep ve not gönderilir (kurulum: `docs/hesap-kurulumu.md` 6. adım). Bildirilen soruda verilen yanlış cevap sayılmaz. |

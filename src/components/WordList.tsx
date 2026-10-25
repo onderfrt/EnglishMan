@@ -6,8 +6,8 @@ import { EmojiArt } from './EmojiArt';
 import { SpeakButton } from './Speak';
 import { WordViewer } from './WordViewer';
 
-export type Filter = 'all' | 'learned' | 'new' | 'learning' | 'mastered';
-type Status = Exclude<Filter, 'all' | 'learned'>;
+export type Filter = 'all' | 'learned' | 'favorites' | 'new' | 'learning' | 'mastered';
+type Status = Exclude<Filter, 'all' | 'learned' | 'favorites'>;
 
 export function status(card: CardState | undefined): Status {
   if (!card) return 'new';
@@ -19,14 +19,17 @@ export const STATUS_LABEL = { new: 'Yeni', learning: 'Öğreniliyor', mastered: 
 const FILTERS: [Filter, string][] = [
   ['all', 'Tümü'],
   ['learned', 'Öğrendiklerim'],
+  ['favorites', '♥ Favoriler'],
   ['new', 'Yeni'],
   ['learning', 'Öğreniliyor'],
   ['mastered', 'Kalıcı'],
 ];
 
-export function matchesFilter(card: CardState | undefined, filter: Filter): boolean {
+export function matchesFilter(wordId: string, progress: Progress, filter: Filter): boolean {
+  const card = progress.cards[wordId];
   if (filter === 'all') return true;
   if (filter === 'learned') return !!card;
+  if (filter === 'favorites') return !!progress.favorites[wordId]?.on;
   return status(card) === filter;
 }
 
@@ -80,7 +83,7 @@ export function WordList({ progress, now, initialFilter = 'all' }: { progress: P
   const list = WORDS.filter(
     (w) =>
       (source === 'all' || (packIds ? packIds.has(w.id) : topic ? w.topic === topic : w.level === source)) &&
-      matchesFilter(progress.cards[w.id], filter) &&
+      matchesFilter(w.id, progress, filter) &&
       (!q || w.en.includes(q) || w.tr.toLowerCase().includes(q) || !!w.synonyms?.some((x) => x.includes(q))),
   );
   const sourceLabel =
@@ -125,6 +128,8 @@ export function WordList({ progress, now, initialFilter = 'all' }: { progress: P
             ? 'Aramana uyan kelime yok.'
             : filter === 'learned'
               ? 'Burada henüz öğrendiğin kelime yok. Çalıştıkça öğrendiğin kelimeler burada birikecek.'
+              : filter === 'favorites'
+                ? 'Henüz favori kelimen yok. Kelime kartındaki ♡ ile ekleyebilirsin.'
               : 'Bu filtrede kelime yok.'}
         </p>
       )}
@@ -147,6 +152,7 @@ export function WordList({ progress, now, initialFilter = 'all' }: { progress: P
           progress={progress}
           now={now}
           onIndexChange={setViewing}
+          title={sourceLabel}
           onClose={() => {
             const id = list[viewing].id;
             setViewing(null);

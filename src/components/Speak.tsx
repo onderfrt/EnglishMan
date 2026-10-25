@@ -5,17 +5,19 @@ export function SpeakButton({
   rate,
   label = 'Dinle',
   icon = '🔊',
+  className = 'icon-btn',
 }: {
   text: string;
   rate?: number;
   label?: string;
   icon?: string;
+  className?: string;
 }) {
   if (!canSpeak()) return null;
   return (
     <button
       type="button"
-      className="icon-btn"
+      className={className}
       aria-label={`${label}: ${text}`}
       title={label}
       onClick={(e) => {

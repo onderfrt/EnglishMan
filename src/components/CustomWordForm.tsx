@@ -178,7 +178,7 @@ export function CustomWordForm({ word, initialEn, level, onSave, onDelete, onCan
 
       <div className="card">
         <p className="prompt">Önizleme · fotoğraf eklemek için görselin altındaki bağlantıyı kullan</p>
-        <WordDetails word={preview} editable />
+        <WordDetails word={preview} editable extras={false} />
       </div>
 
       <div className="form-actions">

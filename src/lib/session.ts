@@ -23,7 +23,15 @@ export type QuizMode =
 
 export type Step =
   | { kind: 'learn'; wordId: string }
-  | { kind: 'quiz'; wordId: string; mode: QuizMode; /** Yalnızca ilk deneme SRS'e işlenir. */ graded: boolean };
+  | {
+      kind: 'quiz';
+      wordId: string;
+      mode: QuizMode;
+      /** Yalnızca ilk deneme SRS'e işlenir. */
+      graded: boolean;
+      /** Kelime kartından başlatılan serbest alıştırma: öğrenilmiş kelimenin tekrar planını değiştirmez. */
+      practice?: boolean;
+    };
 
 export { shuffle, type Rng } from './random';
 
@@ -131,5 +139,28 @@ export function buildSession(p: Progress, now: number, opts: SessionOptions = {}
       ...shuffle(chunk, rng).map((w): Step => ({ kind: 'quiz', wordId: w.id, mode: 'choice-en-tr', graded: true })),
     );
   }
+  return steps;
+}
+
+/** Serbest alıştırmada en fazla bu kadar kelime sorulur. */
+export const PRACTICE_MAX = 10;
+
+/**
+ * Kelime kartındaki "Quiz" için oturum: öğrenilmiş kelimeler tekrar planını bozmadan (puanlanmadan) sorulur,
+ * henüz öğrenilmemiş olanlar önce tanıtılır ve normal şekilde öğrenilmiş sayılır.
+ */
+export function practiceSession(p: Progress, wordIds: string[], rng: Rng = Math.random): Step[] {
+  const isExam = !!(p.settings.goal && GOALS[p.settings.goal].pack);
+  const words = wordIds.map((id) => wordById(id)).filter((w): w is Word => !!w).slice(0, PRACTICE_MAX);
+  const fresh = words.filter((w) => !p.cards[w.id]);
+  const steps: Step[] = fresh.map((w) => ({ kind: 'learn', wordId: w.id }));
+  steps.push(
+    ...shuffle(words, rng).map((w): Step => {
+      const card = p.cards[w.id];
+      return card
+        ? { kind: 'quiz', wordId: w.id, mode: modeFor(card, rng, w, isExam), graded: false, practice: true }
+        : { kind: 'quiz', wordId: w.id, mode: 'choice-en-tr', graded: true };
+    }),
+  );
   return steps;
 }

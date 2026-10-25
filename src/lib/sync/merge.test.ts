@@ -64,6 +64,27 @@ describe('mergeProgress', () => {
   });
 });
 
+describe('notes and favorites', () => {
+  it('lets the newest note edit or deletion win, and keeps old untimed notes', () => {
+    const phone = device({ notes: { a: 'telefonda yazdım' }, noteAt: { a: T + 10 } });
+    const laptop = device({ notes: { a: 'eski', b: 'eski not' }, noteAt: { a: T } });
+    expect(mergeProgress(laptop, phone).notes).toEqual({ a: 'telefonda yazdım', b: 'eski not' });
+    // Laptopta sonradan silinen not, telefondan geri gelmez.
+    const cleared = device({ notes: {}, noteAt: { a: T + 20 } });
+    expect(mergeProgress(cleared, phone).notes.a).toBeUndefined();
+    expect(mergeProgress(phone, cleared).notes.a).toBeUndefined();
+  });
+
+  it('lets the newest favorite toggle win per word', () => {
+    const phone = device({ favorites: { a: { on: true, at: T + 5 }, b: { on: false, at: T + 9 } } });
+    const laptop = device({ favorites: { a: { on: false, at: T }, b: { on: true, at: T + 1 } } });
+    const m = mergeProgress(laptop, phone);
+    expect(m.favorites.a.on).toBe(true);
+    expect(m.favorites.b.on).toBe(false);
+    expect(mergeProgress(phone, laptop).favorites).toEqual(m.favorites);
+  });
+});
+
 describe('mergeImages', () => {
   it('lets the newest add or removal win per word', () => {
     const local = { images: { a: 'A1', b: 'B1' }, meta: { a: { at: 1 }, b: { at: 5 } } };

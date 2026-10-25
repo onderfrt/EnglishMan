@@ -31,6 +31,10 @@ export interface Progress {
   cards: Record<string, CardState>;
   /** Kullanıcının kelime için yazdığı kendi çağrışımı / hafıza ipucu. */
   notes: Record<string, string>;
+  /** Notun son değiştirilme (ya da silinme) zamanı; eşitlemede yeni olan kazanır. */
+  noteAt: Record<string, number>;
+  /** Favori kelimeler (♡): açık/kapalı ve son değiştirilme zamanı. */
+  favorites: Record<string, { on: boolean; at: number }>;
   /** Kullanıcının kendi eklediği kelimeler. */
   customWords: Word[];
   /** Silinen kendi kelimeler: kimlik → silinme zamanı. Eşitlemede başka cihazdan geri gelmesinler diye. */
@@ -60,6 +64,8 @@ export function emptyProgress(): Progress {
     version: 1,
     cards: {},
     notes: {},
+    noteAt: {},
+    favorites: {},
     customWords: [],
     deleted: {},
     settings: { ...DEFAULT_SETTINGS },
