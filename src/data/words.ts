@@ -65,7 +65,7 @@ export const POS_TR: Record<PartOfSpeech, string> = {
   verb: 'fiil',
   adjective: 'sıfat',
   adverb: 'zarf',
-  'phrasal verb': 'deyimsel fiil',
+  'phrasal verb': 'phrasal verb',
   conjunction: 'bağlaç',
   preposition: 'edat',
   other: 'diğer',

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { GOALS, LEVELS, PACKS, TOPICS, type TopicId } from '../data/words';
 import { allWords, customWords, wordById } from '../lib/catalog';
-import { dueCards, EXAM_MAX, sourceWords, unseenWords, type SessionOptions } from '../lib/session';
+import { dueCards, EXAM_MAX, inOwnList, sourceWords, unseenWords, type OwnList, type SessionOptions } from '../lib/session';
 import { isKnown, type Progress } from '../lib/storage';
 import { useWordActions } from '../lib/wordActions';
 import { EmojiArt } from './EmojiArt';
@@ -9,25 +9,21 @@ import { EmojiArt } from './EmojiArt';
 interface Props {
   progress: Progress;
   onStart: (opts: SessionOptions) => void;
-  onOpenCustom: () => void;
+  /** Listesi boş ya da hepsi çalışılmışsa o listeyi açar. */
+  onOpenList: (list: OwnList) => void;
 }
 
 const SHOWN_TOPICS = 6;
 
 /** Alıştırma sekmesi: ekstra yeni kelime, kendi kelimelerin, konular ve yöntemin açıklaması. */
-export function Practice({ progress, onStart, onOpenCustom }: Props) {
+export function Practice({ progress, onStart, onOpenList }: Props) {
   const [allTopics, setAllTopics] = useState(false);
   const actions = useWordActions();
   const { goal, level } = progress.settings;
   const pack = goal ? GOALS[goal].pack : null;
   const left = unseenWords(progress).length;
-  const own = customWords();
-  const ownLeft = unseenWords(progress, undefined, true).length;
-  // Çalışılmış ya da "öğrendim" diye işaretlenmiş kendi kelimeler
-  const ownSeen = own.length - ownLeft;
   // ✓ ile işaretlenmiş tüm kelimeler (hazır ve kendi)
   const knownWords = allWords().filter((w) => isKnown(progress, w.id));
-  const ownDue = dueCards(progress, Date.now()).filter((c) => wordById(c.wordId)?.custom).length;
   const sourceList = sourceWords(progress).filter((w) => !w.custom);
   const topics = (Object.keys(TOPICS) as TopicId[])
     .map((id) => {
@@ -54,32 +50,8 @@ export function Practice({ progress, onStart, onOpenCustom }: Props) {
       )}
 
       <div className="card list-card">
-        <button
-          className="list-row"
-          onClick={() => (ownLeft + ownDue > 0 ? onStart({ own: true, extraNew: Math.min(4, ownLeft) }) : onOpenCustom())}
-        >
-          <span className="icon-box">
-            <EmojiArt emoji="✍️" />
-          </span>
-          <span className="list-text">
-            <b>Kendi kelimelerim</b>
-            <span className="muted small">
-              {own.length === 0
-                ? 'Henüz kelime eklemedin'
-                : ownLeft + ownDue > 0
-                  ? [ownDue && `${ownDue} tekrar`, ownLeft && `${Math.min(4, ownLeft)} yeni`].filter(Boolean).join(' + ') + ' · çalış'
-                  : 'Hepsini öğrendin 🎉'}
-            </span>
-            {own.length > 0 && (
-              <span className="meter thin">
-                <span style={{ width: `${(ownSeen / own.length) * 100}%` }} />
-              </span>
-            )}
-          </span>
-          <span className="list-count">
-            {own.length ? `${ownSeen}/${own.length}` : ''} ›
-          </span>
-        </button>
+        <OwnListRow list="own" progress={progress} onStart={onStart} onOpen={onOpenList} />
+        <OwnListRow list="phrasal" progress={progress} onStart={onStart} onOpen={onOpenList} />
         {knownWords.length > 0 && actions && (
           <button className="list-row" onClick={() => actions.exam(knownWords)}>
             <span className="icon-box">
@@ -142,7 +114,7 @@ export function Practice({ progress, onStart, onOpenCustom }: Props) {
           <li>
             <b>Renk kodu:</b> Görselin arka planı kelime türünü gösterir: <span className="pos-chip pos-noun">isim</span>{' '}
             <span className="pos-chip pos-verb">fiil</span> <span className="pos-chip pos-adjective">sıfat</span>{' '}
-            <span className="pos-chip pos-phrasal-verb">deyimsel fiil</span> <span className="pos-chip pos-adverb">zarf</span>{' '}
+            <span className="pos-chip pos-phrasal-verb">phrasal verb</span> <span className="pos-chip pos-adverb">zarf</span>{' '}
             <span className="pos-chip pos-conjunction">bağlaç</span> <span className="pos-chip pos-preposition">edat</span>
           </li>
           <li>
@@ -165,5 +137,46 @@ export function Practice({ progress, onStart, onOpenCustom }: Props) {
         </ul>
       </details>
     </div>
+  );
+}
+
+const LIST_INFO: Record<OwnList, { emoji: string; title: string; empty: string; opts: SessionOptions }> = {
+  own: { emoji: '✍️', title: 'Kendi kelimelerim', empty: 'Henüz kelime eklemedin', opts: { own: true } },
+  phrasal: { emoji: '🧩', title: 'Phrasal verb’lerim', empty: 'Henüz phrasal verb eklemedin', opts: { phrasal: true } },
+};
+
+/** Kullanıcının bir listesinden (Kelimelerim ya da Phrasal verb'lerim) çalışma: tekrarlar + 4 yeni. */
+function OwnListRow({ list, progress, onStart, onOpen }: { list: OwnList; progress: Progress; onStart: (opts: SessionOptions) => void; onOpen: (list: OwnList) => void }) {
+  const info = LIST_INFO[list];
+  const words = customWords().filter((w) => inOwnList(w, list));
+  const left = unseenWords(progress, undefined, list).length;
+  // Çalışılmış ya da "öğrendim" diye işaretlenmiş olanlar
+  const seen = words.length - left;
+  const due = dueCards(progress, Date.now()).filter((c) => {
+    const w = wordById(c.wordId);
+    return w && inOwnList(w, list);
+  }).length;
+  return (
+    <button className="list-row" onClick={() => (left + due > 0 ? onStart({ ...info.opts, extraNew: Math.min(4, left) }) : onOpen(list))}>
+      <span className="icon-box">
+        <EmojiArt emoji={info.emoji} />
+      </span>
+      <span className="list-text">
+        <b>{info.title}</b>
+        <span className="muted small">
+          {words.length === 0
+            ? info.empty
+            : left + due > 0
+              ? [due && `${due} tekrar`, left && `${Math.min(4, left)} yeni`].filter(Boolean).join(' + ') + ' · çalış'
+              : 'Hepsini öğrendin 🎉'}
+        </span>
+        {words.length > 0 && (
+          <span className="meter thin">
+            <span style={{ width: `${(seen / words.length) * 100}%` }} />
+          </span>
+        )}
+      </span>
+      <span className="list-count">{words.length ? `${seen}/${words.length}` : ''} ›</span>
+    </button>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { GOALS, LEVELS, PACKS, TOPICS, type Level, type TopicId } from '../data/words';
 import { customWords } from '../lib/catalog';
-import { dueCards, newWordsLeftToday, nextLevel, sourceWords, unseenWords, type SessionOptions } from '../lib/session';
+import { dueCards, inOwnList, newWordsLeftToday, nextLevel, sourceWords, unseenWords, type OwnList, type SessionOptions } from '../lib/session';
 import { isMastered } from '../lib/srs';
 import { dayKey, daysUntil, isKnown, streak, type Progress } from '../lib/storage';
 import { EmojiArt } from './EmojiArt';
@@ -15,7 +15,8 @@ interface Props {
   onSetLevel: (level: Level) => void;
   /** Hazır kelimeler listesini (paket ya da seviye) açar. */
   onOpenPack: () => void;
-  onOpenCustom: () => void;
+  /** Kelimelerim ya da Phrasal verb'lerim listesini açar. */
+  onOpenList: (list: OwnList) => void;
   onQuickAdd: (en: string) => void;
 }
 
@@ -63,11 +64,6 @@ export function Home(props: Props) {
   const learnedToday = progress.days[dayKey(now)]?.newLearned ?? 0;
   const days = streak(progress.days, now);
   const total = due + newLeft;
-  const own = customWords();
-  const ownKnown = own.filter((w) => isKnown(progress, w.id)).length;
-  const ownActive = own.filter((w) => progress.cards[w.id] && !isKnown(progress, w.id));
-  const ownLearning = ownActive.filter((w) => !isMastered(progress.cards[w.id])).length;
-  const ownMastered = ownActive.length - ownLearning;
   // Sıradaki konu: içinde henüz öğrenilmemiş kelime olan ilk konu.
   const nextTopic = (Object.keys(TOPICS) as TopicId[])
     .map((id) => ({ id, left: unseenWords(progress, id).filter((w) => !w.custom).length }))
@@ -170,22 +166,8 @@ export function Home(props: Props) {
           </span>
           <span className="list-count">{packDone}/{packList.length} ›</span>
         </button>
-        <button className="list-row" onClick={props.onOpenCustom}>
-          <span className="icon-box">
-            <EmojiArt emoji="✍️" />
-          </span>
-          <span className="list-text">
-            <b>Kelimelerim</b>
-            <span className="muted small">
-              {own.length
-                ? [`${own.length} kelime`, `${ownLearning} öğreniliyor`, ownMastered && `${ownMastered} kalıcı`, ownKnown && `${ownKnown} öğrendim`]
-                    .filter(Boolean)
-                    .join(' · ')
-                : 'Kendi kelimelerini ekle'}
-            </span>
-          </span>
-          <span className="chev">›</span>
-        </button>
+        <OwnListRow list="own" progress={progress} onOpen={props.onOpenList} />
+        <OwnListRow list="phrasal" progress={progress} onOpen={props.onOpenList} />
         {nextTopic && (
           <button className="list-row" onClick={() => onStart({ topic: nextTopic.id, extraNew: Math.min(4, nextTopic.left) })}>
             <span className="icon-box">
@@ -208,5 +190,38 @@ export function Home(props: Props) {
         </p>
       )}
     </div>
+  );
+}
+
+const LIST_ROW: Record<OwnList, { emoji: string; title: string; noun: string; empty: string }> = {
+  own: { emoji: '✍️', title: 'Kelimelerim', noun: 'kelime', empty: 'Kendi kelimelerini ekle' },
+  phrasal: { emoji: '🧩', title: 'Phrasal verb’lerim', noun: 'phrasal verb', empty: 'give up, put off… ezberlemek istediklerini ekle' },
+};
+
+/** Kullanıcının bir listesinin özeti: kaç tane, kaçı öğreniliyor, kalıcı, ✓ öğrendim. */
+function OwnListRow({ list, progress, onOpen }: { list: OwnList; progress: Progress; onOpen: (list: OwnList) => void }) {
+  const info = LIST_ROW[list];
+  const words = customWords().filter((w) => inOwnList(w, list));
+  const known = words.filter((w) => isKnown(progress, w.id)).length;
+  const active = words.filter((w) => progress.cards[w.id] && !isKnown(progress, w.id));
+  const learning = active.filter((w) => !isMastered(progress.cards[w.id])).length;
+  const mastered = active.length - learning;
+  return (
+    <button className="list-row" onClick={() => onOpen(list)}>
+      <span className="icon-box">
+        <EmojiArt emoji={info.emoji} />
+      </span>
+      <span className="list-text">
+        <b>{info.title}</b>
+        <span className="muted small">
+          {words.length
+            ? [`${words.length} ${info.noun}`, `${learning} öğreniliyor`, mastered && `${mastered} kalıcı`, known && `${known} öğrendim`]
+                .filter(Boolean)
+                .join(' · ')
+            : info.empty}
+        </span>
+      </span>
+      <span className="chev">›</span>
+    </button>
   );
 }

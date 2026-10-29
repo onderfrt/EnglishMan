@@ -3,7 +3,7 @@ import { useBack } from '../lib/back';
 import { EmojiArt } from './EmojiArt';
 
 // Anlatılan özellikler değişince sürüm artar; "yeni" noktası yeniden görünür.
-const SEEN_KEY = 'englishman:words-help-seen:v2';
+const SEEN_KEY = 'englishman:words-help-seen:v3';
 
 function seen(): boolean {
   try {
@@ -14,6 +14,11 @@ function seen(): boolean {
 }
 
 const TIPS: { emoji: string; title: string; text: string }[] = [
+  {
+    emoji: '🧩',
+    title: 'Phrasal verb’lerim',
+    text: 'Phrasal verb’ler için ayrı bir liste: give up, put off, look forward to… Yazmaya başlayınca öneriler ve anlamları çıkar; toplu ekleme, ✓, ♡ ve sınav Kelimelerim’deki gibi çalışır. Ana sayfaya “give up” gibi yazarsan doğrudan buraya eklenir.',
+  },
   {
     emoji: '✅',
     title: 'Öğrendim işareti',

@@ -14,6 +14,8 @@ export interface CustomWordInput {
 }
 
 export const DEFAULT_EMOJI = '📝';
+/** Emojisi girilmemiş phrasal verb'lerin görseli. */
+export const DEFAULT_PHRASAL_EMOJI = '🧩';
 
 export const EMPTY_INPUT: CustomWordInput = { en: '', tr: '', pos: 'other', emoji: '', example: '', exampleTr: '', synonyms: '' };
 
@@ -38,7 +40,7 @@ export function toCustomWord(input: CustomWordInput, id: string, level: Level): 
     en: clean(input.en),
     tr: clean(input.tr),
     pos: input.pos,
-    emoji: clean(input.emoji) || DEFAULT_EMOJI,
+    emoji: clean(input.emoji) || (input.pos === 'phrasal verb' ? DEFAULT_PHRASAL_EMOJI : DEFAULT_EMOJI),
     example: clean(input.example),
     exampleTr: clean(input.exampleTr),
     topic: 'custom',
@@ -54,7 +56,7 @@ export function toInput(w: Word): CustomWordInput {
     en: w.en,
     tr: w.tr,
     pos: w.pos,
-    emoji: w.emoji === DEFAULT_EMOJI ? '' : w.emoji,
+    emoji: w.emoji === DEFAULT_EMOJI || w.emoji === DEFAULT_PHRASAL_EMOJI ? '' : w.emoji,
     example: w.example,
     exampleTr: w.exampleTr,
     synonyms: (w.synonyms ?? []).join(', '),
@@ -69,7 +71,7 @@ export function findDuplicate(en: string, exceptId?: string): Word | undefined {
 
 // ---------- Toplu içe aktarma ----------
 
-export type ImportStatus = 'new' | 'update' | 'unchanged' | 'builtin' | 'repeat' | 'invalid';
+export type ImportStatus = 'new' | 'update' | 'unchanged' | 'builtin' | 'repeat' | 'invalid' | 'notphrasal';
 
 export interface ImportRow {
   line: number;
@@ -78,13 +80,15 @@ export interface ImportRow {
   /** Uygulamada aynı İngilizce kelime (kendi kelimen ya da hazır kelime). */
   existing?: Word;
   /** "update" satırında değişecek alanlar. */
-  changes?: Partial<Pick<CustomWordInput, 'tr' | 'example' | 'exampleTr'>>;
+  changes?: Partial<Pick<CustomWordInput, 'tr' | 'example' | 'exampleTr' | 'pos'>>;
   /** Anlam satırda yoktu, sözlükten önerildi. */
   autoMeaning?: boolean;
 }
 
 /** Güncellenebilen alanlar ve önizlemede görünen adları. */
 export const UPDATABLE = { tr: 'anlam', example: 'örnek cümle', exampleTr: 'çeviri' } as const;
+/** Önizlemede değişen alanların adları (tür yalnızca Phrasal verb'lerim'e yüklerken değişir). */
+export const CHANGE_LABELS: Record<keyof NonNullable<ImportRow['changes']>, string> = { ...UPDATABLE, pos: 'phrasal verb’lerine taşınır' };
 
 /** Kendi kelimeye dosyadaki dolu alanları uygular (boş alanlar mevcut değeri korur). */
 export function applyChanges(word: Word, changes: ImportRow['changes']): Word {
@@ -132,12 +136,14 @@ export function splitLine(line: string): string[] {
   return [line];
 }
 
-const HEADER = /^(word|kelime|ingilizce|english|term)\b/i;
+const HEADER = /^(word|kelime|ingilizce|english|term|phrasal)\b/i;
 
 /**
  * @param meaningFor Anlamı boş satırlar için sözlük önerisi (yalnızca İngilizce kelimelerden oluşan listeler için).
+ * @param pos Tüm satırlara verilecek tür (Phrasal verb'lerim'e yüklerken "phrasal verb"); kendi kelimelerinde başka
+ *   türle kayıtlı olanlar da bu türe geçer.
  */
-export function parseImport(text: string, meaningFor?: (en: string) => string): ImportRow[] {
+export function parseImport(text: string, meaningFor?: (en: string) => string, pos?: PartOfSpeech): ImportRow[] {
   const seen = new Set<string>();
   const ownByEn = new Map(customWords().map((w) => [w.en.toLowerCase(), w]));
   const rows: ImportRow[] = [];
@@ -149,11 +155,13 @@ export function parseImport(text: string, meaningFor?: (en: string) => string): 
       const [en = '', tr = '', example = '', exampleTr = ''] = splitLine(raw).map(clean);
       if (i === 0 && HEADER.test(en)) return; // Başlık satırı
       const key = en.toLowerCase();
-      const input: CustomWordInput = { ...EMPTY_INPUT, en, tr, example, exampleTr };
+      const input: CustomWordInput = { ...EMPTY_INPUT, en, tr, example, exampleTr, ...(pos && { pos }) };
       const line = i + 1;
       if (!en) return rows.push({ line, input, status: 'invalid' });
       if (seen.has(key)) return rows.push({ line, input, status: 'repeat' });
       seen.add(key);
+      // Phrasal verb'lerim'e tek kelime (ör. abolish) eklenmez; Kelimelerim'deki aynı kelimeye de dokunulmaz.
+      if (pos === 'phrasal verb' && !key.includes(' ')) return rows.push({ line, input, status: 'notphrasal' });
 
       // Kendi kelimelerinde varsa: dosyadaki dolu ve farklı alanlar güncellenir (ör. sonradan örnek cümle eklemek).
       const own = ownByEn.get(key);
@@ -162,6 +170,7 @@ export function parseImport(text: string, meaningFor?: (en: string) => string): 
         for (const f of Object.keys(UPDATABLE) as (keyof typeof UPDATABLE)[]) {
           if (input[f] && input[f] !== own[f]) changes[f] = input[f];
         }
+        if (pos && own.pos !== pos) changes.pos = pos;
         const status = Object.keys(changes).length ? 'update' : 'unchanged';
         return rows.push({ line, input, status, existing: own, ...(status === 'update' && { changes }) });
       }
@@ -178,7 +187,17 @@ export function parseImport(text: string, meaningFor?: (en: string) => string): 
 }
 
 /** Excel'in Türkçe ayarlarında doğru açılması için noktalı virgüllü, UTF-8 BOM'lu şablon. */
-export function importTemplate(): string {
+export function importTemplate(phrasal = false): string {
+  if (phrasal)
+    return (
+      '\uFEFF' +
+      [
+        'phrasal verb;anlam;örnek cümle;cümlenin çevirisi',
+        "give up;vazgeçmek;Don't give up on your dreams.;Hayallerinden vazgeçme.",
+        'put off;ertelemek;We had to put off the meeting.;Toplantıyı ertelemek zorunda kaldık.',
+        'come up with;(fikir) bulmak;;',
+      ].join('\r\n')
+    );
   return (
     '﻿' +
     [

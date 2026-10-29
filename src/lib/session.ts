@@ -3,6 +3,7 @@ import { allWords, customWords, wordById } from './catalog';
 import type { CardState } from './srs';
 import { clozeQuestion, synonymQuestion } from './exam';
 import { shuffle, type Rng } from './random';
+import { isPhrasal } from './phrasal';
 import { dayKey, isKnown, type Progress } from './storage';
 
 /**
@@ -74,8 +75,10 @@ export function choicesFor(word: Word, rng: Rng = Math.random, count = 4): Word[
 
 export interface SessionOptions {
   topic?: TopicId;
-  /** Yalnızca kullanıcının kendi eklediği kelimeler. */
+  /** Yalnızca Kelimelerim (kullanıcının kendi eklediği, phrasal verb olmayan kelimeler). */
   own?: boolean;
+  /** Yalnızca kullanıcının Phrasal verb'lerim bölümündeki kelimeler. */
+  phrasal?: boolean;
   /** Günlük yeni kelime limitine takılmadan ekstra yeni kelime çalış. */
   extraNew?: number;
 }
@@ -105,11 +108,20 @@ export function sourceWords(p: Progress): Word[] {
 }
 
 /** Kaynakta henüz çalışılmamış kelimeler ("öğrendim" diye işaretlenenler hariç). */
-export function unseenWords(p: Progress, topic?: TopicId, own?: boolean): Word[] {
+export function unseenWords(p: Progress, topic?: TopicId, list?: OwnList): Word[] {
   return sourceWords(p).filter(
-    (w) => !p.cards[w.id] && !isKnown(p, w.id) && (!topic || w.topic === topic) && (!own || !!w.custom),
+    (w) => !p.cards[w.id] && !isKnown(p, w.id) && (!topic || w.topic === topic) && (!list || inOwnList(w, list)),
   );
 }
+
+/** Kullanıcının iki listesi: Kelimelerim ve Phrasal verb'lerim. */
+export type OwnList = 'own' | 'phrasal';
+
+export function inOwnList(w: Word, list: OwnList): boolean {
+  return !!w.custom && isPhrasal(w) === (list === 'phrasal');
+}
+
+const listOf = (opts: SessionOptions): OwnList | undefined => (opts.phrasal ? 'phrasal' : opts.own ? 'own' : undefined);
 
 export function nextLevel(level: Level): Level | null {
   return LEVEL_ORDER[LEVEL_ORDER.indexOf(level) + 1] ?? null;
@@ -121,7 +133,7 @@ export function buildSession(p: Progress, now: number, opts: SessionOptions = {}
   const isExam = !!(p.settings.goal && GOALS[p.settings.goal].pack);
   const reviews = dueCards(p, now)
     .filter((c) => !opts.topic || wordById(c.wordId)!.topic === opts.topic)
-    .filter((c) => !opts.own || !!wordById(c.wordId)!.custom)
+    .filter((c) => !listOf(opts) || inOwnList(wordById(c.wordId)!, listOf(opts)!))
     .slice(0, p.settings.maxReviewsPerSession);
 
   const steps: Step[] = shuffle(reviews, rng).map((c) => ({
@@ -132,7 +144,7 @@ export function buildSession(p: Progress, now: number, opts: SessionOptions = {}
   }));
 
   const newCount = opts.extraNew ?? newWordsLeftToday(p, now);
-  const fresh = unseenWords(p, opts.topic, opts.own).slice(0, newCount);
+  const fresh = unseenWords(p, opts.topic, listOf(opts)).slice(0, newCount);
 
   // Yeni kelimeler 4'erli gruplar hâlinde: önce tanış, hemen ardından karışık sırayla test et.
   for (let i = 0; i < fresh.length; i += CHUNK) {

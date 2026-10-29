@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { POS_TR, type PartOfSpeech } from '../data/words';
-import { loadDictionary, lookup } from '../lib/dictionary';
+import { loadDictionary, lookup, type DictSense } from '../lib/dictionary';
 
 interface Props {
   en: string;
   /** Formdaki Türkçe anlam (virgülle ayrılmış). */
   tr: string;
   onToggle: (meaning: string, pos: PartOfSpeech) => void;
+  /** Sözlük önerilerinin önüne eklenecek güvenilir anlamlar (ör. hazır phrasal verb listesi). */
+  extra?: DictSense[];
 }
 
 const split = (tr: string) =>
@@ -16,13 +18,13 @@ const split = (tr: string) =>
     .filter(Boolean);
 
 /** Türkçe anlam alanının altında sözlük önerileri: dokununca eklenir, tekrar dokununca çıkar. */
-export function DictionaryHints({ en, tr, onToggle }: Props) {
+export function DictionaryHints({ en, tr, onToggle, extra = [] }: Props) {
   const [dict, setDict] = useState<Record<string, string> | null>(null);
   useEffect(() => {
     loadDictionary().then(setDict);
   }, []);
 
-  const senses = lookup(en, dict);
+  const senses = [...extra, ...lookup(en, dict)];
   if (!senses.length) return null;
   const chosen = split(tr);
 

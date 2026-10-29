@@ -20,7 +20,8 @@ import { setCustomWords } from './lib/catalog';
 import { removeUserImages } from './lib/images';
 import { dismissRecovery, initSync, scheduleSync, useSync } from './lib/sync/engine';
 import { sameJSON } from './lib/sync/merge';
-import { buildSession, examSession, practiceSession, type SessionOptions, type Step } from './lib/session';
+import { buildSession, examSession, practiceSession, type OwnList, type SessionOptions, type Step } from './lib/session';
+import { looksPhrasal } from './lib/phrasal';
 import { WordActionsContext, type WordActions } from './lib/wordActions';
 import { setPreferredVoice } from './lib/speech';
 import { newCard, review, type CardState, type Grade } from './lib/srs';
@@ -246,6 +247,10 @@ export default function App() {
   };
 
   const { goal, level, examDate } = progress.settings;
+  const openList = (list: OwnList) => {
+    setWordsView(list === 'phrasal' ? 'phrasal' : 'custom');
+    setTab('words');
+  };
   const openLogin = () => setAuthOpen(true);
   const header = (
     <header className="app-header">
@@ -335,7 +340,8 @@ export default function App() {
           now={now}
           onQuickAdd={(en) => {
             setQuickAdd((q) => ({ en, n: (q?.n ?? 0) + 1 }));
-            setWordsView('custom');
+            // "give up" gibi yazılanlar Phrasal verb'lerim'de açılır.
+            setWordsView(looksPhrasal(en) ? 'phrasal' : 'custom');
             setTab('words');
           }}
           onOpenPack={() => {
@@ -347,16 +353,16 @@ export default function App() {
           onChangeGoal={() => setPicking('goal')}
           onChangeLevel={() => setPicking('level')}
           onSetLevel={setLevel}
-          onOpenCustom={() => {
-            setWordsView('custom');
-            setTab('words');
-          }}
+          onOpenList={openList}
         />
       )}
       {tab === 'words' && (
         <WordsTab
           view={wordsView}
-          onViewChange={setWordsView}
+          onViewChange={(v) => {
+            setWordsView(v);
+            setQuickAdd(null); // hızlı ekleme formu yalnızca ilk açılan listede açılır
+          }}
           progress={progress}
           now={now}
           level={progress.settings.level ?? (goal && GOALS[goal].pack ? 'B2' : 'B1')}
@@ -372,10 +378,7 @@ export default function App() {
         <Practice
           progress={progress}
           onStart={start}
-          onOpenCustom={() => {
-            setWordsView('custom');
-            setTab('words');
-          }}
+          onOpenList={openList}
         />
       )}
       {tab === 'settings' && (

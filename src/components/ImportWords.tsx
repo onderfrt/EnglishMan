@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Level, Word } from '../data/words';
-import { applyChanges, importTemplate, newCustomId, parseImport, toCustomWord, UPDATABLE, type ImportStatus } from '../lib/customWords';
+import { applyChanges, CHANGE_LABELS, importTemplate, newCustomId, parseImport, toCustomWord, type ImportStatus } from '../lib/customWords';
+import { phrasalMeaning } from '../lib/phrasal';
 import { useBack } from '../lib/back';
 import { bestMeaning, loadDictionary, lookup } from '../lib/dictionary';
 import { downloadText } from '../lib/download';
@@ -11,6 +12,8 @@ interface Props {
   /** Yeni kelimeler ve güncellenen kendi kelimeler. */
   onImport: (added: Word[], updated: Word[]) => void;
   onClose: () => void;
+  /** Phrasal verb'lerim'e yükleme: tüm satırlar phrasal verb olarak eklenir, anlamlar phrasal verb listesinden önerilir. */
+  phrasal?: boolean;
 }
 
 const STATUS: Record<ImportStatus, { label: string; className: string }> = {
@@ -20,10 +23,11 @@ const STATUS: Record<ImportStatus, { label: string; className: string }> = {
   builtin: { label: 'Hazır listede var, atlanacak', className: 'status-learning' },
   repeat: { label: 'Dosyada tekrar, atlanacak', className: 'status-learning' },
   invalid: { label: 'Anlam eksik', className: 'status-wrong' },
+  notphrasal: { label: 'Phrasal verb değil, atlanacak', className: 'status-learning' },
 };
 
 /** Toplu kelime ekleme: metin yapıştır ya da dosya yükle, önizle, ekle. */
-export function ImportWords({ level, onImport, onClose }: Props) {
+export function ImportWords({ level, onImport, onClose, phrasal = false }: Props) {
   const [text, setText] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const [dict, setDict] = useState<Record<string, string> | null>(null);
@@ -31,7 +35,14 @@ export function ImportWords({ level, onImport, onClose }: Props) {
     loadDictionary().then(setDict);
   }, []);
   // Yalnızca İngilizce kelime yazılan satırlarda anlam sözlükten önerilir.
-  const rows = useMemo(() => parseImport(text, (en) => bestMeaning(lookup(en, dict))), [text, dict]);
+  const rows = useMemo(
+    () =>
+      phrasal
+        ? parseImport(text, (en) => phrasalMeaning(en, dict), 'phrasal verb')
+        : parseImport(text, (en) => bestMeaning(lookup(en, dict))),
+    [text, dict, phrasal],
+  );
+  const noun = phrasal ? 'phrasal verb' : 'kelime';
   const fresh = rows.filter((r) => r.status === 'new');
   const updates = rows.filter((r) => r.status === 'update');
   const skipped = rows.length - fresh.length - updates.length;
@@ -43,7 +54,7 @@ export function ImportWords({ level, onImport, onClose }: Props) {
     );
   };
 
-  const actionLabel = [fresh.length && `${fresh.length} kelimeyi ekle`, updates.length && `${updates.length} kelimeyi güncelle`]
+  const actionLabel = [fresh.length && `${fresh.length} ${noun} ekle`, updates.length && `${updates.length} ${noun} güncelle`]
     .filter(Boolean)
     .join(', ');
 
@@ -51,15 +62,21 @@ export function ImportWords({ level, onImport, onClose }: Props) {
 
   return (
     <div className="viewer import-words">
-      <BackBar title="Toplu kelime ekle" />
+      <BackBar title={phrasal ? 'Toplu phrasal verb' : 'Toplu kelime ekle'} />
       <div className="card">
         <p className="muted small">
-          Her satıra bir kelime yaz. Alanları <b>noktalı virgül</b> ya da <b>sekme</b> ile ayır:
+          Her satıra bir {noun} yaz. Alanları <b>noktalı virgül</b> ya da <b>sekme</b> ile ayır:
         </p>
-        <pre className="format">kelime ; anlam ; örnek cümle ; cümlenin çevirisi</pre>
+        <pre className="format">{noun} ; anlam ; örnek cümle ; cümlenin çevirisi</pre>
         <ul className="muted small format-tips">
-          <li>Yalnızca kelime ve anlam da yeterli: <code>abandon - terk etmek</code></li>
-          <li>Yalnızca İngilizce kelime yazarsan anlamı sözlükten önerilir; eklemeden önce önizlemede kontrol et.</li>
+          <li>
+            Yalnızca {noun} ve anlam da yeterli: <code>{phrasal ? 'put off - ertelemek' : 'abandon - terk etmek'}</code>
+          </li>
+          <li>
+            {phrasal
+              ? 'Yalnızca phrasal verb yazarsan anlamı phrasal verb listesinden ya da sözlükten önerilir; eklemeden önce önizlemede kontrol et.'
+              : 'Yalnızca İngilizce kelime yazarsan anlamı sözlükten önerilir; eklemeden önce önizlemede kontrol et.'}
+          </li>
           <li>Excel ya da Google E-Tablolar'dan sütunları kopyalayıp yapıştırabilirsin.</li>
           <li>Quizlet ve Anki'den dışa aktardığın listeler de çalışır.</li>
           <li>
@@ -72,7 +89,11 @@ export function ImportWords({ level, onImport, onClose }: Props) {
           rows={7}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={'abandon ; terk etmek ; They had to abandon the car. ; Arabayı terk etmek zorunda kaldılar.\nreluctant ; isteksiz'}
+          placeholder={
+            phrasal
+              ? "give up ; vazgeçmek ; Don't give up on your dreams. ; Hayallerinden vazgeçme.\nput off ; ertelemek\ncome up with"
+              : 'abandon ; terk etmek ; They had to abandon the car. ; Arabayı terk etmek zorunda kaldılar.\nreluctant ; isteksiz'
+          }
           autoCapitalize="off"
           spellCheck={false}
         />
@@ -82,7 +103,9 @@ export function ImportWords({ level, onImport, onClose }: Props) {
           </button>
           <button
             className="btn"
-            onClick={() => downloadText('englishman-kelime-sablonu.csv', importTemplate(), 'text/csv;charset=utf-8')}
+            onClick={() =>
+              downloadText(phrasal ? 'englishman-phrasal-verb-sablonu.csv' : 'englishman-kelime-sablonu.csv', importTemplate(phrasal), 'text/csv;charset=utf-8')
+            }
           >
             ⬇️ Excel şablonu
           </button>
@@ -121,7 +144,7 @@ export function ImportWords({ level, onImport, onClose }: Props) {
                   )}
                   {r.status === 'update' && r.changes && (
                     <span className="small update-note">
-                      Değişecek: {Object.keys(r.changes).map((f) => UPDATABLE[f as keyof typeof UPDATABLE]).join(', ')}
+                      Değişecek: {Object.keys(r.changes).map((f) => CHANGE_LABELS[f as keyof typeof CHANGE_LABELS]).join(', ')}
                     </span>
                   )}
                 </span>
@@ -137,7 +160,7 @@ export function ImportWords({ level, onImport, onClose }: Props) {
           Vazgeç
         </button>
         <button className="btn btn-primary" onClick={add} disabled={!actionLabel}>
-          {actionLabel || 'Kelime ekle'}
+          {actionLabel || (phrasal ? 'Phrasal verb ekle' : 'Kelime ekle')}
         </button>
       </div>
     </div>

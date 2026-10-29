@@ -4,6 +4,7 @@ import { useBack } from '../lib/back';
 import { customWords } from '../lib/catalog';
 import type { Progress } from '../lib/storage';
 import { useWordActions } from '../lib/wordActions';
+import { inOwnList, type OwnList } from '../lib/session';
 import { CustomWordForm } from './CustomWordForm';
 import { EmojiArt } from './EmojiArt';
 import { ImportWords } from './ImportWords';
@@ -20,12 +21,21 @@ interface Props {
   onImport: (added: Word[], updated: Word[]) => void;
   /** Verilirse liste yerine bu kelimeyle doldurulmuş ekleme formu açılır. */
   startWith?: string;
+  /** Hangi liste: Kelimelerim ya da Phrasal verb'lerim (ikisi de kullanıcının kendi kelimeleri). */
+  list?: OwnList;
 }
 
 type Mode = { kind: 'list' } | { kind: 'edit'; word?: Word; en?: string } | { kind: 'import' };
 
-/** Kullanıcının kendi eklediği kelimeler: listele, ekle, düzenle, sil, toplu içe aktar. */
-export function CustomWords({ progress, now, level, onSave, onDelete, onImport, startWith }: Props) {
+const TEXT = {
+  own: { noun: 'kelime', title: 'Kendi kelimelerim', add: '＋ Kelime ekle', other: 'Phrasal verb’lerim' },
+  phrasal: { noun: 'phrasal verb', title: 'Phrasal verb’lerim', add: '＋ Phrasal verb ekle', other: 'Kelimelerim' },
+};
+
+/** Kullanıcının kendi eklediği kelimeler ya da phrasal verb'ler: listele, ekle, düzenle, sil, toplu içe aktar. */
+export function CustomWords({ progress, now, level, onSave, onDelete, onImport, startWith, list: listKind = 'own' }: Props) {
+  const text = TEXT[listKind];
+  const phrasal = listKind === 'phrasal';
   const [mode, setMode] = useState<Mode>(startWith !== undefined ? { kind: 'edit', en: startWith } : { kind: 'list' });
   const [viewing, setViewing] = useState<number | null>(null);
   const [query, setQuery] = useState('');
@@ -33,7 +43,7 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
   const [message, setMessage] = useState('');
   // Toplu seçim: null = seçim modu kapalı
   const [selected, setSelected] = useState<Set<string> | null>(null);
-  const words = customWords();
+  const words = customWords().filter((w) => inOwnList(w, listKind));
   const actions = useWordActions();
   useBack(selected !== null, () => setSelected(null));
 
@@ -43,10 +53,15 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
         key={mode.word?.id ?? 'new'}
         word={mode.word}
         initialEn={mode.en}
+        phrasal={phrasal}
         level={level}
         onSave={(w) => {
           onSave(w);
-          setMessage(mode.word ? `✅ “${w.en}” güncellendi.` : `✅ “${w.en}” eklendi. Bir sonraki oturumda karşına çıkacak.`);
+          // Türü değiştiyse kelime diğer listeye geçer (ör. Kelimelerim'de türü "phrasal verb" seçildiyse).
+          const moved = inOwnList(w, listKind) ? '' : ` ${text.other} bölümüne geçti.`;
+          setMessage(
+            (mode.word ? `✅ “${w.en}” güncellendi.` : `✅ “${w.en}” eklendi. Bir sonraki oturumda karşına çıkacak.`) + moved,
+          );
           setMode({ kind: 'list' });
         }}
         onDelete={
@@ -65,11 +80,12 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
   if (mode.kind === 'import') {
     return (
       <ImportWords
+        phrasal={phrasal}
         level={level}
         onImport={(added, updated) => {
           onImport(added, updated);
           setMessage(
-            `✅ ${[added.length && `${added.length} kelime eklendi`, updated.length && `${updated.length} kelime güncellendi`]
+            `✅ ${[added.length && `${added.length} ${text.noun} eklendi`, updated.length && `${updated.length} ${text.noun} güncellendi`]
               .filter(Boolean)
               .join(', ')}.`,
           );
@@ -118,7 +134,7 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
       ) : (
         <div className="row">
           <button className="btn btn-primary" onClick={() => setMode({ kind: 'edit' })}>
-            ＋ Kelime ekle
+            {text.add}
           </button>
           <button className="btn" onClick={() => setMode({ kind: 'import' })}>
             📥 Toplu ekle
@@ -133,14 +149,26 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
       {message && !selecting && <p className="small">{message}</p>}
 
       {words.length === 0 ? (
-        <div className="card center">
-          <EmojiArt emoji="✍️" className="summary-emoji" />
-          <h3>Kendi kelimelerini ekle</h3>
-          <p className="muted">
-            Kitapta, dizide ya da deneme sınavında karşına çıkan kelimeleri buraya ekle. Anlamını, örnek cümlesini, hatta kendi
-            fotoğrafını ekleyebilirsin. Eklediğin kelimeler oturumlarda öncelikli olarak karşına çıkar.
-          </p>
-        </div>
+        phrasal ? (
+          <div className="card center">
+            <EmojiArt emoji="🧩" className="summary-emoji" />
+            <h3>Phrasal verb’lerini ekle</h3>
+            <p className="muted">
+              Phrasal verb’ler mantıktan çok ezber ister: <i>give up</i> (vazgeçmek), <i>put off</i> (ertelemek),{' '}
+              <i>look forward to</i> (dört gözle beklemek)… Karşına çıkanları buraya ekle; yazmaya başlayınca öneriler ve
+              anlamları çıkar. Aralıklı tekrarla kalıcı hâle gelirler.
+            </p>
+          </div>
+        ) : (
+          <div className="card center">
+            <EmojiArt emoji="✍️" className="summary-emoji" />
+            <h3>Kendi kelimelerini ekle</h3>
+            <p className="muted">
+              Kitapta, dizide ya da deneme sınavında karşına çıkan kelimeleri buraya ekle. Anlamını, örnek cümlesini, hatta
+              kendi fotoğrafını ekleyebilirsin. Eklediğin kelimeler oturumlarda öncelikli olarak karşına çıkar.
+            </p>
+          </div>
+        )
       ) : (
         <>
           {words.length > 5 && (
@@ -205,7 +233,7 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
           now={now}
           onIndexChange={setViewing}
           onClose={() => setViewing(null)}
-          title="Kendi kelimelerim"
+          title={text.title}
           actions={(w) => (
             <button
               className="round-btn"

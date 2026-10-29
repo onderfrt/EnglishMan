@@ -14,6 +14,7 @@ import { useBack } from '../lib/back';
 import { BackBar } from './BackBar';
 import { DictionaryHints } from './DictionaryHints';
 import { WordAutocomplete } from './WordAutocomplete';
+import { curatedSense, looksPhrasal } from '../lib/phrasal';
 import { WordDetails } from './WordDetails';
 
 interface Props {
@@ -21,6 +22,8 @@ interface Props {
   word?: Word;
   /** Yeni kelimede önceden doldurulacak İngilizce kelime (ana sayfadaki hızlı ekleme). */
   initialEn?: string;
+  /** Phrasal verb'lerim bölümünden açıldı: tür baştan "phrasal verb", öneriler phrasal verb listesinden gelir. */
+  phrasal?: boolean;
   level: Level;
   onSave: (word: Word) => void;
   onDelete?: () => void;
@@ -32,9 +35,11 @@ const POS_OPTIONS: [PartOfSpeech, string][] = [
   ...(Object.entries(POS_TR) as [PartOfSpeech, string][]).filter(([p]) => p !== 'other'),
 ];
 
-export function CustomWordForm({ word, initialEn, level, onSave, onDelete, onCancel }: Props) {
+export function CustomWordForm({ word, initialEn, phrasal = false, level, onSave, onDelete, onCancel }: Props) {
   const [id] = useState(() => word?.id ?? newCustomId());
-  const [input, setInput] = useState<CustomWordInput>(() => (word ? toInput(word) : { ...EMPTY_INPUT, en: initialEn ?? '' }));
+  const [input, setInput] = useState<CustomWordInput>(() =>
+    word ? toInput(word) : { ...EMPTY_INPUT, en: initialEn ?? '', ...(phrasal && { pos: 'phrasal verb' as const }) },
+  );
   const [tried, setTried] = useState(false);
 
   const set = (patch: Partial<CustomWordInput>) => setInput((i) => ({ ...i, ...patch }));
@@ -58,16 +63,18 @@ export function CustomWordForm({ word, initialEn, level, onSave, onDelete, onCan
 
   return (
     <div className="viewer custom-form">
-      <BackBar title={word ? 'Kelimeyi düzenle' : 'Yeni kelime'} />
+      <BackBar title={phrasal ? (word ? 'Phrasal verb’ü düzenle' : 'Yeni phrasal verb') : word ? 'Kelimeyi düzenle' : 'Yeni kelime'} />
       <div className="card">
 
         <div className="field">
-          <span>İngilizce kelime *</span>
+          <span>{phrasal ? 'Phrasal verb *' : 'İngilizce kelime *'}</span>
           <WordAutocomplete
             value={input.en}
             invalid={tried && !preview.en}
             onChange={(en) => set({ en })}
-            onPick={(en, known) =>
+            phrasal={phrasal}
+            placeholder={phrasal ? 'ör. give up, look forward to' : undefined}
+            onPick={(en, known, meaning) =>
               // Uygulamada olan bir kelime seçildiyse boş alanları onun bilgileriyle doldur.
               setInput((i) =>
                 known
@@ -81,11 +88,26 @@ export function CustomWordForm({ word, initialEn, level, onSave, onDelete, onCan
                       pos: i.pos === 'other' ? known.pos : i.pos,
                       emoji: i.emoji || known.emoji,
                     }
-                  : { ...i, en },
+                  : { ...i, en, tr: i.tr || meaning || '' },
               )
             }
           />
         </div>
+        {!phrasal && input.pos !== 'phrasal verb' && looksPhrasal(input.en) && (
+          <p className="notice small phrasal-notice">
+            “{input.en.trim()}” bir phrasal verb’e benziyor.
+            <button type="button" className="chip-btn" onClick={() => set({ pos: 'phrasal verb' })}>
+              Phrasal verb’lerime ekle
+            </button>
+          </p>
+        )}
+        {(phrasal ? input.pos !== 'phrasal verb' : input.pos === 'phrasal verb') && (
+          <p className="small muted">
+            {phrasal
+              ? 'Türü phrasal verb olmadığı için kaydedince Kelimelerim bölümünde görünecek.'
+              : 'Kaydedince Phrasal verb’lerim bölümünde görünecek.'}
+          </p>
+        )}
         {duplicate && (
           <p className="notice small">
             Bu kelime uygulamada zaten var{duplicate.custom ? ' (kendi kelimelerinde)' : ''}: “{duplicate.tr}”. Yine de
@@ -98,13 +120,14 @@ export function CustomWordForm({ word, initialEn, level, onSave, onDelete, onCan
           <input
             value={input.tr}
             onChange={(e) => set({ tr: e.target.value })}
-            placeholder="ör. terk etmek"
+            placeholder={phrasal ? 'ör. vazgeçmek' : 'ör. terk etmek'}
             className={tried && !preview.tr ? 'invalid' : ''}
           />
         </label>
         <DictionaryHints
           en={input.en}
           tr={input.tr}
+          extra={phrasal || input.pos === 'phrasal verb' ? curatedSense(input.en) : undefined}
           onToggle={(meaning, pos) =>
             setInput((i) => {
               const list = i.tr.split(',').map((x) => x.trim()).filter(Boolean);
@@ -121,13 +144,15 @@ export function CustomWordForm({ word, initialEn, level, onSave, onDelete, onCan
             rows={2}
             value={input.example}
             onChange={(e) => set({ example: e.target.value })}
-            placeholder="ör. They had to abandon the car."
+            placeholder={phrasal ? 'ör. Don’t give up on your dreams.' : 'ör. They had to abandon the car.'}
             autoCapitalize="sentences"
             spellCheck={false}
           />
           {!clozeReady && (
             <small className="warn-text">
-              Kelime bu cümlede aynen (ya da -s, -ed, -ing ekiyle) geçmiyor; bu kelime için boşluk doldurma sorusu çıkmaz.
+              {input.pos === 'phrasal verb'
+                ? 'Phrasal verb bu cümlede bitişik ve aynen (ya da -s, -ing ekiyle) geçmiyor (ör. “gave up” ya da “give it up”); bunun için boşluk doldurma sorusu çıkmaz, diğer sorular çıkar.'
+                : 'Kelime bu cümlede aynen (ya da -s, -ed, -ing ekiyle) geçmiyor; bu kelime için boşluk doldurma sorusu çıkmaz.'}
             </small>
           )}
         </label>
@@ -138,7 +163,7 @@ export function CustomWordForm({ word, initialEn, level, onSave, onDelete, onCan
             rows={2}
             value={input.exampleTr}
             onChange={(e) => set({ exampleTr: e.target.value })}
-            placeholder="ör. Arabayı terk etmek zorunda kaldılar."
+            placeholder={phrasal ? 'ör. Hayallerinden vazgeçme.' : 'ör. Arabayı terk etmek zorunda kaldılar.'}
           />
         </label>
 
@@ -196,7 +221,7 @@ export function CustomWordForm({ word, initialEn, level, onSave, onDelete, onCan
           className="btn btn-danger btn-block"
           onClick={() => confirm(`“${word.en}” ve ilerlemesi silinecek. Emin misin?`) && onDelete()}
         >
-          🗑️ Kelimeyi sil
+          🗑️ {phrasal ? 'Phrasal verb’ü sil' : 'Kelimeyi sil'}
         </button>
       )}
     </div>

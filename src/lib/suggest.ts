@@ -5,6 +5,10 @@ import { allWords } from './catalog';
 export interface Suggestion {
   en: string;
   word?: Word;
+  /** Güvenilir Türkçe anlam (hazır phrasal verb listesi): seçilince anlam alanı dolar. */
+  meaning?: string;
+  /** Yalnızca ipucu olarak gösterilen sözlük anlamı. */
+  hint?: string;
 }
 
 let wordlist: string[] | null = null;

@@ -17,6 +17,28 @@ const IRREGULAR_VERBS = new Set([
   'withdraw', 'arise', 'mean', 'pay', 'make', 'take', 'think', 'bring', 'teach', 'feel', 'leave', 'keep',
 ]);
 
+/**
+ * Sık kullanılan düzensiz fiiller. Kullanıcının eklediği kelimelerde (özellikle phrasal verb'lerde: take off,
+ * break down, run out of…) ilk kelime bunlardan biriyse "taked off" gibi yanlış çekim üretilmez.
+ */
+const IRREGULAR_HEADS = new Set(
+  (
+    'arise awake be bear beat become begin bend bet bind bite bleed blow break breed bring build burst buy cast catch ' +
+    'choose cling come cost creep cut deal dig do draw drink drive eat fall feed feel fight find flee fling fly forbid ' +
+    'forget forgive freeze get give go grind grow hang have hear hide hit hold hurt keep kneel know lay lead leave lend ' +
+    'let lie light lose make mean meet overcome pay put quit read ride ring rise run say see seek sell send set sew ' +
+    'shake shed shine shoot shrink shut sing sink sit sleep slide speak speed spend spin spit split spread spring ' +
+    'stand steal stick sting stink strike string strive swear sweep swim swing take teach tear tell think throw thrust ' +
+    'tread undergo understand undertake upset wake wear weave weep win wind withdraw withhold withstand write'
+  ).split(' '),
+);
+
+const head = (en: string) => en.split(' ')[0];
+/** Düzensiz fiillerin -ing hâlinde son harfi ikilenenler (run → running, get up → getting up). */
+const DOUBLE_ING = new Set('begin cut dig forget get hit let put quit run set shut sit spin split swim upset win'.split(' '));
+/** -s eki düzensiz olanlar (goes, does, has, is). */
+const IRREGULAR_S = new Set(['be', 'have', 'do', 'go', 'undergo']);
+
 /** Son ünsüzü ikilenen fiiller (occur → occurred, occurring). */
 const DOUBLE_FINAL = new Set(['occur', 'refer', 'prefer', 'permit', 'commit', 'admit', 'control', 'regret', 'transfer', 'compel', 'plan', 'stop']);
 
@@ -31,6 +53,7 @@ function inflectOne(w: string, type: Inflection): string {
     return w + 's';
   }
   if ((type === 'ed' || type === 'ing') && DOUBLE_FINAL.has(w)) return w + w.at(-1) + type;
+  if (type === 'ing' && DOUBLE_ING.has(w)) return w + w.at(-1) + 'ing';
   if (type === 'ed') {
     if (w.endsWith('e')) return w + 'd';
     if (/[^aeiou]y$/.test(w)) return w.slice(0, -1) + 'ied';
@@ -49,8 +72,11 @@ export function inflect(en: string, type: Inflection): string {
 
 function canInflect(w: Word, type: Inflection): boolean {
   if (type === 'base') return true;
-  if (type === 'ed' || type === 'ing') return ['verb', 'phrasal verb'].includes(w.pos) && !IRREGULAR_VERBS.has(w.en);
-  return (w.pos === 'noun' && !IRREGULAR_PLURALS.has(w.en)) || (['verb', 'phrasal verb'].includes(w.pos) && !IRREGULAR_VERBS.has(w.en));
+  const verb = ['verb', 'phrasal verb'].includes(w.pos) && !IRREGULAR_VERBS.has(w.en);
+  // Düzensiz fiillerin geçmiş zamanı tahmin edilemez (took off, broke down); -ing ve -s hâlleri ise kurala uyar.
+  if (type === 'ed') return verb && !IRREGULAR_HEADS.has(head(w.en));
+  if (type === 'ing') return verb;
+  return (w.pos === 'noun' && !IRREGULAR_PLURALS.has(w.en)) || (verb && !IRREGULAR_S.has(head(w.en)));
 }
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

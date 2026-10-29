@@ -59,6 +59,24 @@ uygulama seni bir sonraki seviyeye davet eder. Seviyeyi ana sayfadaki seviye kar
   (örnek cümle varsa boşluk doldurma, en az iki eş anlamlı varsa eş anlamlı sorusu).
 - Yedek dosyası kendi kelimelerini ve eklediğin fotoğrafları da içerir.
 
+
+## Phrasal verb'lerin
+
+Phrasal verb'ler mantıktan çok ezber gerektirdiği için **Kelimeler → Phrasal verb** bölümünde ayrı bir listeleri var.
+Kapsamı ve özellikleri Kelimelerim'le aynıdır: tek tek ya da toplu ekleme (Excel şablonu dahil), düzenleme, seçip silme,
+✓ Öğrendim, ♡ Favoriler, Kendini sına, aralıklı tekrar ve hesapla eşitleme.
+
+- **Öneriler:** Bir fiil yazmaya başlayınca (ör. `look`) *look after, look into, look up to…* gibi phrasal verb'ler
+  anlamlarıyla önerilir. ~170 sık kullanılan phrasal verb'lük hazır listeden seçilenlerin anlamı otomatik dolar
+  (`src/data/phrasalVerbs.ts`); sözlükteki ~800 phrasal verb de ipucu olarak çıkar.
+- **Toplu ekleme:** Yalnızca phrasal verb yazılan satırların anlamı hazır listeden ya da sözlükten önerilir. Tek kelimelik
+  satırlar (ör. *abolish*) phrasal verb olmadığı için atlanır.
+- **Otomatik yönlendirme:** Ana sayfadaki hızlı eklemeye *give up* gibi bir ifade yazılırsa Phrasal verb'lerim'de açılır;
+  Kelimelerim'e eklerken de “phrasal verb'e benziyor” uyarısıyla tek dokunuşla taşınabilir.
+- **Sorular:** Çeldiriciler önce diğer phrasal verb'lerden seçilir (give up / give in / give away). Boşluk doldurmada
+  düzensiz fiillerin geçmiş zamanı tahmin edilmez (yanlış “taked off” şıkkı çıkmaz).
+- Alıştırma sekmesinde ve ana sayfada Phrasal verb'lerim için ayrı satır vardır.
+
 ## Hesap ve cihazlar arası eşitleme
 
 İstersen hesap oluşturup telefonda ve bilgisayarda aynı verilerle çalışabilirsin (Profil → ☁️ Hesap, ya da ilk
