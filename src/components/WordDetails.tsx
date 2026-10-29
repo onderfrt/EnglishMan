@@ -23,9 +23,24 @@ export function WordDetails({ word, note, editable, footer, extras = true }: Pro
   const hint = note ?? (editable ? actions?.notes[word.id] : undefined);
   const canEdit = editable && extras && !!actions;
   const favorite = canEdit && actions.isFavorite(word.id);
+  // "Öğrendim" işareti yalnızca kendi kelimelerde: ne zaman öğrendiğine kullanıcı karar verir.
+  const canMarkKnown = canEdit && !!word.custom;
+  const known = canMarkKnown && actions.isKnown(word.id);
 
   return (
     <div className="word-details">
+      {canMarkKnown && (
+        <button
+          type="button"
+          className={`known-btn ${known ? 'on' : ''}`}
+          onClick={() => actions.setKnown([word.id], !known)}
+          aria-pressed={known}
+          aria-label={known ? 'Öğrendiklerimden çıkar' : 'Öğrendiklerime ekle'}
+          title={known ? 'Öğrendiklerimden çıkar' : 'Öğrendiklerime ekle'}
+        >
+          ✓
+        </button>
+      )}
       {canEdit && (
         <button
           type="button"
@@ -44,6 +59,7 @@ export function WordDetails({ word, note, editable, footer, extras = true }: Pro
         <span className={`pos-dot pos-${word.pos.replace(' ', '-')}`} />
         {POS_TR[word.pos]}
         {word.custom ? '' : ` · ${word.level}`}
+        {known && <span className="known-tag"> · ✓ Öğrendiklerimde</span>}
       </div>
       <div className="word-tr">{word.tr}</div>
       <div className="wd-play">

@@ -83,6 +83,14 @@ describe('notes and favorites', () => {
     expect(m.favorites.b.on).toBe(false);
     expect(mergeProgress(phone, laptop).favorites).toEqual(m.favorites);
   });
+
+  it('syncs "learned" marks per word, newest wins, and drops them for deleted words', () => {
+    const phone = device({ known: { 'custom:a': { on: true, at: T + 5 }, 'custom:b': { on: true, at: T } } });
+    const laptop = device({ known: { 'custom:a': { on: false, at: T + 9 } }, deleted: { 'custom:b': T + 1 } });
+    const m = mergeProgress(phone, laptop);
+    expect(m.known['custom:a'].on).toBe(false); // laptopta sonradan geri alınmış
+    expect(m.known['custom:b']).toBeUndefined();
+  });
 });
 
 describe('mergeImages', () => {

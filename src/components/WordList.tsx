@@ -1,20 +1,29 @@
 import { useState, type ReactNode } from 'react';
 import { GOALS, LEVEL_ORDER, LEVELS, PACKS, TOPICS, WORDS, type Level, type PackId, type TopicId, type Word } from '../data/words';
 import { isMastered, type CardState } from '../lib/srs';
-import type { Progress } from '../lib/storage';
+import { EXAM_MAX } from '../lib/session';
+import { isKnown, type Progress } from '../lib/storage';
+import { useWordActions } from '../lib/wordActions';
 import { EmojiArt } from './EmojiArt';
 import { SpeakButton } from './Speak';
 import { WordViewer } from './WordViewer';
 
 export type Filter = 'all' | 'learned' | 'favorites' | 'new' | 'learning' | 'mastered';
-type Status = Exclude<Filter, 'all' | 'learned' | 'favorites'>;
+type Status = 'new' | 'learning' | 'mastered' | 'known';
 
-export function status(card: CardState | undefined): Status {
+/** Tekrar kaydına göre durum. */
+export function status(card: CardState | undefined): Exclude<Status, 'known'> {
   if (!card) return 'new';
   return isMastered(card) ? 'mastered' : 'learning';
 }
 
-export const STATUS_LABEL = { new: 'Yeni', learning: 'Öğreniliyor', mastered: 'Kalıcı' };
+/** Kelimenin listede görünen durumu: kendi kelimelerde kullanıcının "öğrendim" işareti önce gelir. */
+export function wordStatus(word: Word, progress: Progress): Status {
+  if (word.custom && isKnown(progress, word.id)) return 'known';
+  return status(progress.cards[word.id]);
+}
+
+export const STATUS_LABEL: Record<Status, string> = { new: 'Yeni', learning: 'Öğreniliyor', mastered: 'Kalıcı', known: '✓ Öğrendim' };
 
 const FILTERS: [Filter, string][] = [
   ['all', 'Tümü'],
@@ -25,12 +34,36 @@ const FILTERS: [Filter, string][] = [
   ['mastered', 'Kalıcı'],
 ];
 
-export function matchesFilter(wordId: string, progress: Progress, filter: Filter): boolean {
-  const card = progress.cards[wordId];
+/**
+ * "Öğrendiklerim": kendi kelimelerde kullanıcının ✓ ile işaretledikleri, hazır kelimelerde çalışmaya başlanmış olanlar.
+ */
+export function matchesFilter(word: Word, progress: Progress, filter: Filter): boolean {
   if (filter === 'all') return true;
-  if (filter === 'learned') return !!card;
-  if (filter === 'favorites') return !!progress.favorites[wordId]?.on;
-  return status(card) === filter;
+  if (filter === 'learned') return word.custom ? isKnown(progress, word.id) : !!progress.cards[word.id];
+  if (filter === 'favorites') return !!progress.favorites[word.id]?.on;
+  return wordStatus(word, progress) === filter;
+}
+
+/** Öğrendiklerim filtresinin üstünde: bu kelimelerden karışık bir sınav başlatır. */
+export function ExamBanner({ words }: { words: Word[] }) {
+  const actions = useWordActions();
+  if (!actions || words.length === 0) return null;
+  return (
+    <div className="card exam-banner">
+      <span className="icon-box">
+        <EmojiArt emoji="📝" />
+      </span>
+      <span className="list-text">
+        <b>Kendini sına</b>
+        <span className="muted small">
+          {words.length > EXAM_MAX ? `${words.length} kelimeden rastgele ${EXAM_MAX} soru` : `${words.length} soruluk karışık sınav`}
+        </span>
+      </span>
+      <button className="btn btn-primary btn-sm" onClick={() => actions.exam(words)}>
+        Başla
+      </button>
+    </div>
+  );
 }
 
 /** Durum çipleri (Tümü, Öğrendiklerim, Yeni...). */
@@ -48,8 +81,8 @@ export function FilterChips({ value, onChange, children }: { value: Filter; onCh
 }
 
 /** Liste satırı: görsel, kelime + seviye, anlam, durum ve dinle. */
-export function WordRowContent({ word, card, showLevel = true }: { word: Word; card: CardState | undefined; showLevel?: boolean }) {
-  const st = status(card);
+export function WordRowContent({ word, progress, showLevel = true }: { word: Word; progress: Progress; showLevel?: boolean }) {
+  const st = wordStatus(word, progress);
   return (
     <>
       <span className="row-icon">
@@ -83,7 +116,7 @@ export function WordList({ progress, now, initialFilter = 'all' }: { progress: P
   const list = WORDS.filter(
     (w) =>
       (source === 'all' || (packIds ? packIds.has(w.id) : topic ? w.topic === topic : w.level === source)) &&
-      matchesFilter(w.id, progress, filter) &&
+      matchesFilter(w, progress, filter) &&
       (!q || w.en.includes(q) || w.tr.toLowerCase().includes(q) || !!w.synonyms?.some((x) => x.includes(q))),
   );
   const sourceLabel =
@@ -121,6 +154,7 @@ export function WordList({ progress, now, initialFilter = 'all' }: { progress: P
           </select>
         </label>
       </FilterChips>
+      {filter === 'learned' && <ExamBanner words={list} />}
       <p className="muted small list-count-line">{list.length} kelime</p>
       {list.length === 0 && (
         <p className="card muted center">
@@ -138,7 +172,7 @@ export function WordList({ progress, now, initialFilter = 'all' }: { progress: P
           {list.map((w, i) => (
             <li key={w.id} className="word-row" id={`row-${w.id}`}>
               <button className="word-row-main" onClick={() => setViewing(i)}>
-                <WordRowContent word={w} card={progress.cards[w.id]} />
+                <WordRowContent word={w} progress={progress} />
               </button>
               <SpeakButton text={w.en} icon="🔈" />
             </li>

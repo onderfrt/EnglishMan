@@ -3,7 +3,7 @@ import { allWords, customWords, wordById } from './catalog';
 import type { CardState } from './srs';
 import { clozeQuestion, synonymQuestion } from './exam';
 import { shuffle, type Rng } from './random';
-import { dayKey, type Progress } from './storage';
+import { dayKey, isKnown, type Progress } from './storage';
 
 /**
  * Soru tipleri. Kelime ilerledikçe zorlaşır:
@@ -84,9 +84,10 @@ export function newWordsLeftToday(p: Progress, now: number): number {
   return Math.max(0, p.settings.newPerDay - (p.days[dayKey(now)]?.newLearned ?? 0));
 }
 
+/** Tekrar zamanı gelen kartlar ("öğrendim" diye işaretlenen kelimeler hariç). */
 export function dueCards(p: Progress, now: number): CardState[] {
   return Object.values(p.cards)
-    .filter((c) => c.due <= now && wordById(c.wordId))
+    .filter((c) => c.due <= now && wordById(c.wordId) && !isKnown(p, c.wordId))
     .sort((a, b) => a.due - b.due);
 }
 
@@ -103,9 +104,11 @@ export function sourceWords(p: Progress): Word[] {
   return [...own, ...WORDS.filter((w) => !level || w.level === level)];
 }
 
-/** Kaynakta henüz çalışılmamış kelimeler. */
+/** Kaynakta henüz çalışılmamış kelimeler ("öğrendim" diye işaretlenenler hariç). */
 export function unseenWords(p: Progress, topic?: TopicId, own?: boolean): Word[] {
-  return sourceWords(p).filter((w) => !p.cards[w.id] && (!topic || w.topic === topic) && (!own || !!w.custom));
+  return sourceWords(p).filter(
+    (w) => !p.cards[w.id] && !isKnown(p, w.id) && (!topic || w.topic === topic) && (!own || !!w.custom),
+  );
 }
 
 export function nextLevel(level: Level): Level | null {
@@ -163,4 +166,24 @@ export function practiceSession(p: Progress, wordIds: string[], rng: Rng = Math.
     }),
   );
   return steps;
+}
+
+/** Bir sınavda en fazla bu kadar soru sorulur. */
+export const EXAM_MAX = 20;
+
+/**
+ * "Kendini sına": öğrenilmiş kelimelerden rastgele en fazla 20 soruluk karışık bir sınav. Kelime tanıtılmaz, sorular
+ * puanlanmaz; yani sınav tekrar planını değiştirmez, yalnızca ne kadar hatırladığını gösterir.
+ */
+export function examSession(wordIds: string[], rng: Rng = Math.random): Step[] {
+  const words = shuffle(
+    wordIds.map((id) => wordById(id)).filter((w): w is Word => !!w),
+    rng,
+  ).slice(0, EXAM_MAX);
+  return words.map((w): Step => {
+    const modes: QuizMode[] = ['choice-en-tr', 'choice-tr-en', 'type-tr-en', 'listen-choice'];
+    if (clozeQuestion(w)) modes.push('cloze');
+    if (synonymQuestion(w)) modes.push('synonym');
+    return { kind: 'quiz', wordId: w.id, mode: pick(modes, rng), graded: false, practice: true };
+  });
 }

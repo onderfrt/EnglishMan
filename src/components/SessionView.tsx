@@ -7,9 +7,14 @@ import type { Progress } from '../lib/storage';
 import { LearnCard } from './LearnCard';
 import { EmojiArt } from './EmojiArt';
 import { Quiz } from './Quiz';
+import { useWordActions } from '../lib/wordActions';
+
+/** study: normal çalışma ya da hızlı quiz; exam: Öğrendiklerimden "Kendini sına". */
+export type SessionKind = 'study' | 'exam';
 
 interface Props {
   initialSteps: Step[];
+  kind?: SessionKind;
   progress: Progress;
   onGrade: (wordId: string, result: TypedResult) => void;
   /** Bildirilen hatalı soruda verilen yanlış cevabı geri alır. */
@@ -21,7 +26,7 @@ interface Props {
 const RETRY_GAP = 3;
 const MAX_RETRIES = 2;
 
-export function SessionView({ initialSteps, progress, onGrade, onUngrade, onExit }: Props) {
+export function SessionView({ initialSteps, kind = 'study', progress, onGrade, onUngrade, onExit }: Props) {
   const [steps, setSteps] = useState(initialSteps);
   const [index, setIndex] = useState(0);
   const [results, setResults] = useState<{ wordId: string; result: TypedResult }[]>([]);
@@ -33,7 +38,7 @@ export function SessionView({ initialSteps, progress, onGrade, onUngrade, onExit
   const answered = results.length;
 
   if (!step) {
-    return <Summary results={results} onExit={onExit} />;
+    return <Summary results={results} exam={kind === 'exam'} onExit={onExit} />;
   }
 
   const word = wordById(step.wordId)!;
@@ -48,7 +53,8 @@ export function SessionView({ initialSteps, progress, onGrade, onUngrade, onExit
     } else if (step.practice) {
       setResults((r) => [...r, { wordId: step.wordId, result }]);
     }
-    if (result === 'wrong') {
+    // Sınavda yanlışlar tekrar sorulmaz; sonuç ekranında topluca gösterilir.
+    if (result === 'wrong' && kind !== 'exam') {
       setSteps((s) => {
         const retries = s.filter((x) => x.kind === 'quiz' && !x.graded && x.wordId === step.wordId).length;
         if (retries >= MAX_RETRIES) return s;
@@ -65,6 +71,8 @@ export function SessionView({ initialSteps, progress, onGrade, onUngrade, onExit
     if (result !== 'wrong' || step.kind !== 'quiz') return;
     if (step.graded && before?.index === index) {
       onUngrade(step.wordId, before.card, result);
+      setResults((r) => r.slice(0, -1));
+    } else if (step.practice) {
       setResults((r) => r.slice(0, -1));
     }
     setSteps((s) => s.filter((x, i) => i <= index || x.kind !== 'quiz' || x.graded || x.wordId !== step.wordId));
@@ -92,6 +100,7 @@ export function SessionView({ initialSteps, progress, onGrade, onUngrade, onExit
         />
       ) : (
         <>
+          {kind === 'exam' && <div className="badge badge-new">📝 Sınav</div>}
           {!step.graded && !step.practice && <div className="badge badge-retry">Tekrar deneyelim</div>}
           <Quiz
             key={`${index}-${step.wordId}`}
@@ -109,14 +118,18 @@ export function SessionView({ initialSteps, progress, onGrade, onUngrade, onExit
   );
 }
 
-function Summary({ results, onExit }: { results: { wordId: string; result: TypedResult }[]; onExit: () => void }) {
+function Summary({ results, exam, onExit }: { results: { wordId: string; result: TypedResult }[]; exam: boolean; onExit: () => void }) {
+  const actions = useWordActions();
+  const [moved, setMoved] = useState(false);
   const correct = results.filter((r) => r.result !== 'wrong').length;
   const missed = [...new Set(results.filter((r) => r.result === 'wrong').map((r) => r.wordId))];
+  // Sınavda bilinemeyen "öğrendim" işaretli kelimeler: tek dokunuşla yeniden öğrenmeye alınabilir.
+  const missedKnown = exam && actions ? missed.filter((id) => actions.isKnown(id)) : [];
   const pct = results.length ? Math.round((correct / results.length) * 100) : 0;
   return (
     <div className="card center">
       <EmojiArt emoji={pct >= 80 ? '🎉' : pct >= 50 ? '💪' : '🌱'} className="summary-emoji" />
-      <h2>Oturum tamamlandı!</h2>
+      <h2>{exam ? 'Sınav tamamlandı!' : 'Oturum tamamlandı!'}</h2>
       {results.length > 0 && (
         <p className="big-stat">
           {correct}/{results.length} doğru <span className="muted">(%{pct})</span>
@@ -124,7 +137,7 @@ function Summary({ results, onExit }: { results: { wordId: string; result: Typed
       )}
       {missed.length > 0 && (
         <div className="missed">
-          <p className="muted">Bu kelimeler yakında tekrar karşına çıkacak:</p>
+          <p className="muted">{exam ? 'Bilemediğin kelimeler:' : 'Bu kelimeler yakında tekrar karşına çıkacak:'}</p>
           <div className="chips">
             {missed.map((id) => (
               <span key={id} className="chip">
@@ -134,9 +147,29 @@ function Summary({ results, onExit }: { results: { wordId: string; result: Typed
           </div>
         </div>
       )}
-      <p className="muted">Düzenli kısa tekrarlar, tek seferlik uzun çalışmadan çok daha etkilidir. Yarın görüşmek üzere! 👋</p>
+      {missedKnown.length > 0 &&
+        (moved ? (
+          <p className="small notice-ok">Bu kelimeler Öğrendiklerimden çıkarıldı; günlük tekrarlarında yeniden karşına çıkacak.</p>
+        ) : (
+          <button
+            className="btn btn-block"
+            onClick={() => {
+              actions!.setKnown(missedKnown, false);
+              setMoved(true);
+            }}
+          >
+            ↩ Bilemediğin {missedKnown.length} kelimeyi yeniden öğrenmeye al
+          </button>
+        ))}
+      <p className="muted">
+        {exam
+          ? pct >= 80
+            ? 'Harika! Öğrendiklerin yerinde duruyor.'
+            : 'Zorlandığın kelimeleri yeniden öğrenmeye alırsan aralıklı tekrar onları kalıcı hâle getirir.'
+          : 'Düzenli kısa tekrarlar, tek seferlik uzun çalışmadan çok daha etkilidir. Yarın görüşmek üzere! 👋'}
+      </p>
       <button className="btn btn-primary btn-block" onClick={onExit}>
-        Ana sayfaya dön
+        {exam ? 'Kelimelere dön' : 'Ana sayfaya dön'}
       </button>
     </div>
   );

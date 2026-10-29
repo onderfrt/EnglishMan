@@ -161,7 +161,17 @@ export function WordViewer({ words, index, progress, now, onIndexChange, onClose
         </div>
       ) : (
         <div className="card viewer-card" key={word.id}>
-          <WordDetails word={word} editable footer={card ? `Tekrar: ${formatDue(card.due, now)}` : undefined} />
+          <WordDetails
+            word={word}
+            editable
+            footer={
+              word.custom && wordActions?.isKnown(word.id)
+                ? 'Öğrendiklerimde · günlük tekrarlarda çıkmaz'
+                : card
+                  ? `Tekrar: ${formatDue(card.due, now)}`
+                  : undefined
+            }
+          />
         </div>
       )}
 

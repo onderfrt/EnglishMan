@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { GOALS, LEVELS, PACKS, TOPICS, type TopicId } from '../data/words';
 import { customWords, wordById } from '../lib/catalog';
-import { dueCards, sourceWords, unseenWords, type SessionOptions } from '../lib/session';
-import type { Progress } from '../lib/storage';
+import { dueCards, EXAM_MAX, sourceWords, unseenWords, type SessionOptions } from '../lib/session';
+import { isKnown, type Progress } from '../lib/storage';
+import { useWordActions } from '../lib/wordActions';
 import { EmojiArt } from './EmojiArt';
 
 interface Props {
@@ -16,12 +17,15 @@ const SHOWN_TOPICS = 6;
 /** Alıştırma sekmesi: ekstra yeni kelime, kendi kelimelerin, konular ve yöntemin açıklaması. */
 export function Practice({ progress, onStart, onOpenCustom }: Props) {
   const [allTopics, setAllTopics] = useState(false);
+  const actions = useWordActions();
   const { goal, level } = progress.settings;
   const pack = goal ? GOALS[goal].pack : null;
   const left = unseenWords(progress).length;
   const own = customWords();
-  const ownSeen = own.filter((w) => progress.cards[w.id]).length;
-  const ownLeft = own.length - ownSeen;
+  const ownLeft = unseenWords(progress, undefined, true).length;
+  // Çalışılmış ya da "öğrendim" diye işaretlenmiş kendi kelimeler
+  const ownSeen = own.length - ownLeft;
+  const ownKnown = own.filter((w) => isKnown(progress, w.id));
   const ownDue = dueCards(progress, Date.now()).filter((c) => wordById(c.wordId)?.custom).length;
   const sourceList = sourceWords(progress).filter((w) => !w.custom);
   const topics = (Object.keys(TOPICS) as TopicId[])
@@ -75,6 +79,20 @@ export function Practice({ progress, onStart, onOpenCustom }: Props) {
             {own.length ? `${ownSeen}/${own.length}` : ''} ›
           </span>
         </button>
+        {ownKnown.length > 0 && actions && (
+          <button className="list-row" onClick={() => actions.exam(ownKnown)}>
+            <span className="icon-box">
+              <EmojiArt emoji="📝" />
+            </span>
+            <span className="list-text">
+              <b>Öğrendiklerimle kendini sına</b>
+              <span className="muted small">
+                {ownKnown.length} kelime · {Math.min(EXAM_MAX, ownKnown.length)} soruluk karışık sınav
+              </span>
+            </span>
+            <span className="chev">›</span>
+          </button>
+        )}
       </div>
 
       <div className="section-head">

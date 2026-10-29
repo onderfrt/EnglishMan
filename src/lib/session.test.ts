@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PACKS, WORDS, WORDS_BY_ID } from '../data/words';
-import { buildSession, choicesFor, nextLevel, unseenWords } from './session';
+import { buildSession, choicesFor, dueCards, EXAM_MAX, examSession, nextLevel, unseenWords } from './session';
 import { DAY, newCard } from './srs';
 import { daysUntil, emptyProgress, streak } from './storage';
 
@@ -41,6 +41,29 @@ describe('buildSession', () => {
     expect(steps[0]).toMatchObject({ kind: 'quiz', wordId: WORDS[0].id });
     expect(steps.filter((s) => s.kind === 'learn')).toHaveLength(1);
     expect(steps.some((s) => s.wordId === WORDS[1].id)).toBe(false);
+  });
+});
+
+describe('"learned" marks (Öğrendiklerim)', () => {
+  it('keeps marked words out of daily reviews and new words until unmarked', () => {
+    const p = emptyProgress();
+    p.settings.level = 'A2';
+    const [a, b] = WORDS.filter((w) => w.level === 'A2');
+    p.cards[a.id] = { ...newCard(a.id, T0 - 5 * DAY), due: T0 - DAY };
+    p.known = { [a.id]: { on: true, at: T0 }, [b.id]: { on: true, at: T0 } };
+    expect(dueCards(p, T0)).toHaveLength(0);
+    expect(unseenWords(p).some((w) => w.id === b.id)).toBe(false);
+    p.known[a.id] = { on: false, at: T0 + 1 };
+    expect(dueCards(p, T0).map((c) => c.wordId)).toEqual([a.id]);
+  });
+
+  it('builds an ungraded mixed exam of at most 20 questions without intro cards', () => {
+    const ids = WORDS.slice(0, 30).map((w) => w.id);
+    const steps = examSession(ids, seeded());
+    expect(steps).toHaveLength(EXAM_MAX);
+    expect(steps.every((s) => s.kind === 'quiz' && !s.graded && s.practice)).toBe(true);
+    expect(new Set(steps.map((s) => s.wordId)).size).toBe(EXAM_MAX);
+    expect(examSession(ids.slice(0, 3), seeded())).toHaveLength(3);
   });
 });
 

@@ -5,11 +5,12 @@ import { NavIcon } from './components/NavIcon';
 import { Practice } from './components/Practice';
 import { GoalPicker } from './components/GoalPicker';
 import { LevelPicker } from './components/LevelPicker';
-import { SessionView } from './components/SessionView';
+import { SessionView, type SessionKind } from './components/SessionView';
 import { SettingsView } from './components/SettingsView';
 import { AuthScreen } from './components/AuthScreen';
 import { BackBar } from './components/BackBar';
 import { SyncBadge } from './components/SyncBadge';
+import { WordsHelp } from './components/WordsHelp';
 import { WordsTab, type WordsView } from './components/WordsTab';
 import type { Filter } from './components/WordList';
 import { GOALS, type Goal, type Level, type Word } from './data/words';
@@ -19,11 +20,11 @@ import { setCustomWords } from './lib/catalog';
 import { removeUserImages } from './lib/images';
 import { dismissRecovery, initSync, scheduleSync, useSync } from './lib/sync/engine';
 import { sameJSON } from './lib/sync/merge';
-import { buildSession, practiceSession, type SessionOptions, type Step } from './lib/session';
+import { buildSession, examSession, practiceSession, type SessionOptions, type Step } from './lib/session';
 import { WordActionsContext, type WordActions } from './lib/wordActions';
 import { setPreferredVoice } from './lib/speech';
 import { newCard, review, type CardState, type Grade } from './lib/srs';
-import { dayKey, loadProgress, saveProgress, type Progress, type Theme } from './lib/storage';
+import { dayKey, isKnown, loadProgress, saveProgress, type Progress, type Theme } from './lib/storage';
 
 type Tab = 'home' | 'words' | 'practice' | 'settings';
 
@@ -56,7 +57,7 @@ export default function App() {
   const [wordsView, setWordsView] = useState<WordsView>('builtin');
   // Kendi kelimeler tüm uygulamada (oturum, sorular, listeler) görünür olsun.
   setCustomWords(progress.customWords);
-  const [session, setSession] = useState<Step[] | null>(null);
+  const [session, setSession] = useState<{ steps: Step[]; kind: SessionKind } | null>(null);
   const [now, setNow] = useState(Date.now());
   const [picking, setPicking] = useState<'goal' | 'level' | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
@@ -101,7 +102,7 @@ export default function App() {
 
   const start = (opts: SessionOptions) => {
     const steps = buildSession(progress, Date.now(), opts);
-    if (steps.length) setSession(steps);
+    if (steps.length) setSession({ steps, kind: 'study' });
   };
 
   const grade = (wordId: string, result: TypedResult) => {
@@ -165,6 +166,8 @@ export default function App() {
         ...p,
         cards: keep(p.cards),
         notes: keep(p.notes),
+        favorites: keep(p.favorites),
+        known: keep(p.known),
         customWords: p.customWords.filter((w) => !gone.has(w.id)),
         // Diğer cihazlardan eşitlemede geri gelmesin
         deleted: { ...p.deleted, ...Object.fromEntries(ids.map((id) => [id, at])) },
@@ -199,7 +202,17 @@ export default function App() {
     toggleFavorite,
     practice: (words) => {
       const steps = practiceSession(progress, words.map((w) => w.id));
-      if (steps.length) setSession(steps);
+      if (steps.length) setSession({ steps, kind: 'study' });
+    },
+    isKnown: (id) => isKnown(progress, id),
+    setKnown: (ids, on) =>
+      setProgress((p) => {
+        const at = Date.now();
+        return { ...p, known: { ...p.known, ...Object.fromEntries(ids.map((id) => [id, { on, at }])) } };
+      }),
+    exam: (words) => {
+      const steps = examSession(words.map((w) => w.id));
+      if (steps.length) setSession({ steps, kind: 'exam' });
     },
   };
 
@@ -297,7 +310,8 @@ export default function App() {
     return withOverlay(
       <main className="app">
         <SessionView
-          initialSteps={session}
+          initialSteps={session.steps}
+          kind={session.kind}
           progress={progress}
           onGrade={grade}
           onUngrade={ungrade}
@@ -309,7 +323,12 @@ export default function App() {
 
   return withOverlay(
     <main className="app">
-      {tab !== 'home' && <h1 className="page-title">{tab === 'settings' ? 'Profil' : TABS.find(([id]) => id === tab)![1]}</h1>}
+      {tab !== 'home' && (
+        <div className="page-head">
+          <h1 className="page-title">{tab === 'settings' ? 'Profil' : TABS.find(([id]) => id === tab)![1]}</h1>
+          {tab === 'words' && <WordsHelp />}
+        </div>
+      )}
       {tab === 'home' && (
         <Home
           progress={progress}

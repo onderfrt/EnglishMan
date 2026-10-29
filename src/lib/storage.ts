@@ -35,6 +35,11 @@ export interface Progress {
   noteAt: Record<string, number>;
   /** Favori kelimeler (♡): açık/kapalı ve son değiştirilme zamanı. */
   favorites: Record<string, { on: boolean; at: number }>;
+  /**
+   * Kullanıcının "öğrendim" diye işaretlediği kendi kelimeleri (Öğrendiklerim). Bu kelimeler günlük tekrarlara ve
+   * yeni kelimelere girmez; istendiğinde sınavla yoklanır. İşaret kaldırılınca kelime öğrenme akışına geri döner.
+   */
+  known: Record<string, { on: boolean; at: number }>;
   /** Kullanıcının kendi eklediği kelimeler. */
   customWords: Word[];
   /** Silinen kendi kelimeler: kimlik → silinme zamanı. Eşitlemede başka cihazdan geri gelmesinler diye. */
@@ -66,12 +71,18 @@ export function emptyProgress(): Progress {
     notes: {},
     noteAt: {},
     favorites: {},
+    known: {},
     customWords: [],
     deleted: {},
     settings: { ...DEFAULT_SETTINGS },
     settingsUpdatedAt: 0,
     days: {},
   };
+}
+
+/** Kelime kullanıcı tarafından "öğrendim" diye işaretlendi mi? */
+export function isKnown(p: Progress, wordId: string): boolean {
+  return !!p.known?.[wordId]?.on;
 }
 
 export function parseProgress(raw: string): Progress {

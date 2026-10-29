@@ -9,6 +9,11 @@ export interface WordActions {
   toggleFavorite: (wordId: string) => void;
   /** Verilen kelimelerle hemen bir quiz başlatır. */
   practice: (words: Word[]) => void;
+  /** Kendi kelimeleri "öğrendim" diye işaretler ya da işareti kaldırır. */
+  isKnown: (wordId: string) => boolean;
+  setKnown: (wordIds: string[], on: boolean) => void;
+  /** Verilen kelimelerden (en fazla 20 soruluk) bir sınav başlatır. */
+  exam: (words: Word[]) => void;
 }
 
 export const WordActionsContext = createContext<WordActions | null>(null);

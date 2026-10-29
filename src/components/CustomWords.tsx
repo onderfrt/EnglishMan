@@ -2,13 +2,14 @@ import { useState } from 'react';
 import type { Level, Word } from '../data/words';
 import { useBack } from '../lib/back';
 import { customWords } from '../lib/catalog';
-import type { Progress } from '../lib/storage';
+import { isKnown, type Progress } from '../lib/storage';
+import { useWordActions } from '../lib/wordActions';
 import { CustomWordForm } from './CustomWordForm';
 import { EmojiArt } from './EmojiArt';
 import { ImportWords } from './ImportWords';
 import { SpeakButton } from './Speak';
 import { WordViewer } from './WordViewer';
-import { FilterChips, matchesFilter, WordRowContent, type Filter } from './WordList';
+import { ExamBanner, FilterChips, matchesFilter, WordRowContent, type Filter } from './WordList';
 
 interface Props {
   progress: Progress;
@@ -33,6 +34,7 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
   // Toplu seçim: null = seçim modu kapalı
   const [selected, setSelected] = useState<Set<string> | null>(null);
   const words = customWords();
+  const actions = useWordActions();
   useBack(selected !== null, () => setSelected(null));
 
   if (mode.kind === 'edit') {
@@ -81,7 +83,7 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
   const q = query.trim().toLowerCase();
   const list = words
     .filter((w) => !q || w.en.toLowerCase().includes(q) || w.tr.toLowerCase().includes(q))
-    .filter((w) => matchesFilter(w.id, progress, filter))
+    .filter((w) => matchesFilter(w, progress, filter))
     .slice()
     .reverse(); // En son eklenen en üstte
 
@@ -94,6 +96,18 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
       return next;
     });
   const allVisibleSelected = selecting && list.length > 0 && list.every((w) => selected.has(w.id));
+  // Seçilenlerin hepsi zaten Öğrendiklerimdeyse düğme onları çıkarır, değilse hepsini ekler.
+  const allSelectedKnown = !!selected?.size && [...selected].every((id) => isKnown(progress, id));
+  const markSelected = () => {
+    if (!selected?.size || !actions) return;
+    actions.setKnown([...selected], !allSelectedKnown);
+    setMessage(
+      allSelectedKnown
+        ? `↩ ${selected.size} kelime Öğrendiklerimden çıkarıldı; yeniden öğrenme akışına döndü.`
+        : `✓ ${selected.size} kelime Öğrendiklerime eklendi. Artık günlük tekrarlarda çıkmayacak; istediğin zaman kendini sınayabilirsin.`,
+    );
+    setSelected(null);
+  };
   const deleteSelected = () => {
     if (!selected?.size) return;
     if (!confirm(`${selected.size} kelime, ilerlemeleri ve fotoğraflarıyla birlikte silinecek. Emin misin?`)) return;
@@ -124,6 +138,11 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
           >
             {allVisibleSelected ? 'Seçimi kaldır' : q ? `Bulunanları seç (${list.length})` : 'Tümünü seç'}
           </button>
+          {actions && (
+            <button className="btn btn-good" onClick={markSelected} disabled={!selected.size}>
+              {allSelectedKnown ? `↩ Öğrendiklerimden çıkar (${selected.size})` : `✓ Öğrendim (${selected.size})`}
+            </button>
+          )}
           <button className="btn btn-danger" onClick={deleteSelected} disabled={!selected.size}>
             🗑️ Sil ({selected.size})
           </button>
@@ -157,21 +176,31 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
       ) : (
         <>
           {words.length > 5 && (
-            <>
-              <input
-                className="search"
-                type="search"
-                placeholder="Ara: İngilizce ya da Türkçe"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-              <FilterChips value={filter} onChange={setFilter} />
-            </>
+            <input
+              className="search"
+              type="search"
+              placeholder="Ara: İngilizce ya da Türkçe"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
           )}
+          <FilterChips value={filter} onChange={setFilter} />
+          {filter === 'learned' && !selecting && <ExamBanner words={list} />}
           <p className="muted small">
-            {selecting ? 'Silmek istediğin kelimelere dokun · ' : ''}
+            {selecting ? 'Kelimelere dokunarak seç · ' : ''}
             {q || filter !== 'all' ? `${list.length} / ${words.length}` : words.length} kelime
           </p>
+          {list.length === 0 && (
+            <p className="card muted center">
+              {q
+                ? 'Aramana uyan kelime yok.'
+                : filter === 'learned'
+                  ? 'Henüz Öğrendiklerine eklediğin kelime yok. Kelime kartının sol üstündeki ✓ ile ya da Seç → ✓ Öğrendim ile ekleyebilirsin.'
+                  : filter === 'favorites'
+                    ? 'Henüz favori kelimen yok. Kelime kartındaki ♡ ile ekleyebilirsin.'
+                    : 'Bu filtrede kelime yok.'}
+            </p>
+          )}
           <ul className="card word-rows">
             {list.map((w, i) => {
               const checked = !!selected?.has(w.id);
@@ -184,7 +213,7 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
                     aria-checked={selecting ? checked : undefined}
                   >
                     {selecting && <span className={`check ${checked ? 'on' : ''}`}>{checked ? '✓' : ''}</span>}
-                    <WordRowContent word={w} card={progress.cards[w.id]} />
+                    <WordRowContent word={w} progress={progress} />
                   </button>
                   {!selecting && (
                     <>

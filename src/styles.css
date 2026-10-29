@@ -2576,3 +2576,115 @@ input[hidden] + .list-row {
     transform: translateX(16px);
   }
 }
+
+/* Öğrendiklerim: kart işareti, sınav kutusu, toplu işaretleme */
+.known-btn {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  z-index: 1;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+.known-btn.on {
+  background: var(--good);
+  border-color: var(--good);
+  color: #fff;
+}
+.known-tag {
+  color: var(--good);
+  font-weight: 700;
+}
+.status-dot.status-known {
+  color: var(--good);
+}
+.exam-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.exam-banner .icon-box {
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+}
+.select-bar {
+  flex-wrap: wrap;
+}
+.select-bar .btn {
+  flex: 1 1 40%;
+}
+.select-bar .btn-good:not(:disabled) {
+  background: var(--good);
+  border-color: var(--good);
+  color: #fff;
+}
+
+/* Sayfa başlığı + bilgi düğmesi */
+.page-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.page-head .page-title {
+  flex: 1;
+}
+.info-btn {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--primary);
+  font: italic 800 16px Georgia, 'Times New Roman', serif;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.new-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e5486b;
+  border: 2px solid var(--bg);
+}
+.help-sheet ul {
+  list-style: none;
+  margin: 14px 0 6px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.help-sheet li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.help-sheet li .icon-box {
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+}
+.help-sheet li > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.help-sheet li .small {
+  font-size: 13.5px;
+  line-height: 1.45;
+}

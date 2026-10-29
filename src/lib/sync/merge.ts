@@ -8,7 +8,7 @@ import type { DayLog, Progress } from '../storage';
  * telefonda yapılan çalışma bilgisayardaki eski veriyle ezilmesin:
  * - Kelime tekrar kayıtları: en son çalışılan kazanır.
  * - Kendi kelimeler: en son düzenlenen kazanır; silinenler (deleted) geri gelmez.
- * - Notlar (hafıza ipuçları) ve favoriler: kelime başına en son değişiklik kazanır (silme dahil);
+ * - Notlar (hafıza ipuçları), favoriler ve "öğrendim" işaretleri: kelime başına en son değişiklik kazanır (silme dahil);
  *   zamanı bilinmeyen eski notlarda bu cihazdaki not kalır.
  * - Günlük istatistik: her alanın büyüğü (aynı gün iki cihazda çalışılırsa kayıp olmaz).
  * - Ayarlar: en son değiştirilen kazanır.
@@ -29,7 +29,9 @@ export function mergeProgress(local: Progress, remote: Progress | null | undefin
     const text = lt >= rt ? (local.notes[id] ?? (lt ? undefined : remote.notes[id])) : remote.notes[id];
     if (text) notes[id] = text;
   }
-  const favorites = mergeRecords(local.favorites ?? {}, remote.favorites ?? {}, (a, b) => (a.at >= b.at ? a : b));
+  const newerToggle = <T extends { at: number }>(a: T, b: T) => (a.at >= b.at ? a : b);
+  const favorites = mergeRecords(local.favorites ?? {}, remote.favorites ?? {}, newerToggle);
+  const known = mergeRecords(local.known ?? {}, remote.known ?? {}, newerToggle);
 
   const words = new Map<string, Word>();
   for (const w of [...remote.customWords, ...local.customWords]) {
@@ -42,6 +44,7 @@ export function mergeProgress(local: Progress, remote: Progress | null | undefin
       delete cards[id];
       delete notes[id];
       delete favorites[id];
+      delete known[id];
     }
   }
 
@@ -56,6 +59,7 @@ export function mergeProgress(local: Progress, remote: Progress | null | undefin
     notes,
     noteAt,
     favorites,
+    known,
     customWords: sortByOrder(customWords, local.customWords, remote.customWords),
     deleted,
     // Ses seçimi cihaza özgüdür (her cihazın sesleri farklı); hep bu cihazınki kalır.

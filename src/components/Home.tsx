@@ -3,7 +3,7 @@ import { GOALS, LEVELS, PACKS, TOPICS, type Level, type TopicId } from '../data/
 import { customWords } from '../lib/catalog';
 import { dueCards, newWordsLeftToday, nextLevel, sourceWords, unseenWords, type SessionOptions } from '../lib/session';
 import { isMastered } from '../lib/srs';
-import { dayKey, daysUntil, streak, type Progress } from '../lib/storage';
+import { dayKey, daysUntil, isKnown, streak, type Progress } from '../lib/storage';
 import { EmojiArt } from './EmojiArt';
 
 interface Props {
@@ -62,8 +62,10 @@ export function Home(props: Props) {
   const days = streak(progress.days, now);
   const total = due + newLeft;
   const own = customWords();
-  const ownLearning = own.filter((w) => progress.cards[w.id] && !isMastered(progress.cards[w.id])).length;
-  const ownMastered = own.filter((w) => progress.cards[w.id] && isMastered(progress.cards[w.id])).length;
+  const ownKnown = own.filter((w) => isKnown(progress, w.id)).length;
+  const ownActive = own.filter((w) => progress.cards[w.id] && !isKnown(progress, w.id));
+  const ownLearning = ownActive.filter((w) => !isMastered(progress.cards[w.id])).length;
+  const ownMastered = ownActive.length - ownLearning;
   // Sıradaki konu: içinde henüz öğrenilmemiş kelime olan ilk konu.
   const nextTopic = (Object.keys(TOPICS) as TopicId[])
     .map((id) => ({ id, left: unseenWords(progress, id).filter((w) => !w.custom).length }))
@@ -173,7 +175,9 @@ export function Home(props: Props) {
             <b>Kelimelerim</b>
             <span className="muted small">
               {own.length
-                ? `${own.length} kelime · ${ownLearning} öğreniliyor${ownMastered ? ` · ${ownMastered} kalıcı` : ''}`
+                ? [`${own.length} kelime`, `${ownLearning} öğreniliyor`, ownMastered && `${ownMastered} kalıcı`, ownKnown && `${ownKnown} öğrendim`]
+                    .filter(Boolean)
+                    .join(' · ')
                 : 'Kendi kelimelerini ekle'}
             </span>
           </span>
