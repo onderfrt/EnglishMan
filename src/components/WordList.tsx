@@ -4,6 +4,7 @@ import { isMastered, type CardState } from '../lib/srs';
 import { EXAM_MAX } from '../lib/session';
 import { isKnown, type Progress } from '../lib/storage';
 import { useWordActions } from '../lib/wordActions';
+import { useBack } from '../lib/back';
 import { EmojiArt } from './EmojiArt';
 import { SpeakButton } from './Speak';
 import { WordViewer } from './WordViewer';
@@ -17,9 +18,9 @@ export function status(card: CardState | undefined): Exclude<Status, 'known'> {
   return isMastered(card) ? 'mastered' : 'learning';
 }
 
-/** Kelimenin listede görünen durumu: kendi kelimelerde kullanıcının "öğrendim" işareti önce gelir. */
+/** Kelimenin listede görünen durumu: kullanıcının "öğrendim" (✓) işareti önce gelir. */
 export function wordStatus(word: Word, progress: Progress): Status {
-  if (word.custom && isKnown(progress, word.id)) return 'known';
+  if (isKnown(progress, word.id)) return 'known';
   return status(progress.cards[word.id]);
 }
 
@@ -34,12 +35,10 @@ const FILTERS: [Filter, string][] = [
   ['mastered', 'Kalıcı'],
 ];
 
-/**
- * "Öğrendiklerim": kendi kelimelerde kullanıcının ✓ ile işaretledikleri, hazır kelimelerde çalışmaya başlanmış olanlar.
- */
+/** "Öğrendiklerim": kullanıcının ✓ ile işaretlediği kelimeler (hazır ya da kendi). */
 export function matchesFilter(word: Word, progress: Progress, filter: Filter): boolean {
   if (filter === 'all') return true;
-  if (filter === 'learned') return word.custom ? isKnown(progress, word.id) : !!progress.cards[word.id];
+  if (filter === 'learned') return isKnown(progress, word.id);
   if (filter === 'favorites') return !!progress.favorites[word.id]?.on;
   return wordStatus(word, progress) === filter;
 }
@@ -100,6 +99,72 @@ export function WordRowContent({ word, progress, showLevel = true }: { word: Wor
   );
 }
 
+export function toggleSelected(setSelected: (fn: (sel: Set<string> | null) => Set<string> | null) => void, id: string) {
+  setSelected((sel) => {
+    const next = new Set(sel);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    return next;
+  });
+}
+
+export const markMessage = (n: number, on: boolean) =>
+  on
+    ? `✓ ${n} kelime Öğrendiklerime eklendi. Artık günlük tekrarlarda ve yeni kelimelerde çıkmayacak; istediğin zaman kendini sınayabilirsin.`
+    : `↩ ${n} kelime Öğrendiklerimden çıkarıldı; yeniden öğrenme akışına döndü.`;
+
+/**
+ * Seçim modu çubuğu: Bitti, görünenlerin hepsini seç, ✓ Öğrendim (seçilenlerin hepsi zaten Öğrendiklerimdeyse
+ * aynı düğme onları çıkarır) ve isteğe bağlı ek düğmeler (ör. Sil).
+ */
+export function SelectBar({
+  list,
+  selected,
+  setSelected,
+  progress,
+  onMark,
+  filtered = false,
+  children,
+}: {
+  list: Word[];
+  selected: Set<string>;
+  setSelected: (fn: (sel: Set<string> | null) => Set<string> | null) => void;
+  progress: Progress;
+  onMark: (ids: string[], on: boolean) => void;
+  /** Arama ya da süzgeç varsa "Tümünü seç" yerine "Bulunanları seç" yazar. */
+  filtered?: boolean;
+  children?: ReactNode;
+}) {
+  const allVisibleSelected = list.length > 0 && list.every((w) => selected.has(w.id));
+  const allSelectedKnown = selected.size > 0 && [...selected].every((id) => isKnown(progress, id));
+  return (
+    <div className="select-bar">
+      <button className="btn" onClick={() => setSelected(() => null)}>
+        ✕ Bitti
+      </button>
+      <button
+        className="btn"
+        onClick={() =>
+          setSelected((sel) => {
+            const next = new Set(sel);
+            for (const w of list) {
+              if (allVisibleSelected) next.delete(w.id);
+              else next.add(w.id);
+            }
+            return next;
+          })
+        }
+      >
+        {allVisibleSelected ? 'Seçimi kaldır' : `${filtered ? 'Bulunanları' : 'Tümünü'} seç (${list.length})`}
+      </button>
+      <button className="btn btn-good" onClick={() => onMark([...selected], !allSelectedKnown)} disabled={!selected.size}>
+        {allSelectedKnown ? `↩ Öğrendiklerimden çıkar (${selected.size})` : `✓ Öğrendim (${selected.size})`}
+      </button>
+      {children}
+    </div>
+  );
+}
+
 type Source = Level | PackId | `topic:${TopicId}` | 'all';
 
 export function WordList({ progress, now, initialFilter = 'all' }: { progress: Progress; now: number; initialFilter?: Filter }) {
@@ -111,6 +176,11 @@ export function WordList({ progress, now, initialFilter = 'all' }: { progress: P
   const topic = source.startsWith('topic:') ? source.slice(6) : null;
   const [query, setQuery] = useState('');
   const [viewing, setViewing] = useState<number | null>(null);
+  // Toplu ✓: null = seçim modu kapalı
+  const [selected, setSelected] = useState<Set<string> | null>(null);
+  const [message, setMessage] = useState('');
+  const actions = useWordActions();
+  useBack(selected !== null, () => setSelected(null));
 
   const q = query.trim().toLowerCase();
   const list = WORDS.filter(
@@ -121,6 +191,7 @@ export function WordList({ progress, now, initialFilter = 'all' }: { progress: P
   );
   const sourceLabel =
     source === 'all' ? 'Tüm kelimeler' : packIds ? PACKS[source as PackId].name : topic ? TOPICS[topic as TopicId].name : source;
+  const selecting = selected !== null;
 
   return (
     <div className="word-list">
@@ -154,14 +225,39 @@ export function WordList({ progress, now, initialFilter = 'all' }: { progress: P
           </select>
         </label>
       </FilterChips>
-      {filter === 'learned' && <ExamBanner words={list} />}
-      <p className="muted small list-count-line">{list.length} kelime</p>
+      {selecting && actions ? (
+        <SelectBar
+          list={list}
+          selected={selected}
+          setSelected={setSelected}
+          progress={progress}
+          onMark={(ids, on) => {
+            actions.setKnown(ids, on);
+            setMessage(markMessage(ids.length, on));
+            setSelected(null);
+          }}
+        />
+      ) : (
+        filter === 'learned' && <ExamBanner words={list} />
+      )}
+      {message && !selecting && <p className="small">{message}</p>}
+      <div className="list-count-line">
+        <span className="muted small">
+          {selecting ? 'Kelimelere dokunarak seç · ' : ''}
+          {list.length} kelime
+        </span>
+        {!selecting && actions && list.length > 0 && (
+          <button className="chip-btn" onClick={() => setSelected(new Set())}>
+            ☑️ Seç
+          </button>
+        )}
+      </div>
       {list.length === 0 && (
         <p className="card muted center">
           {q
             ? 'Aramana uyan kelime yok.'
             : filter === 'learned'
-              ? 'Burada henüz öğrendiğin kelime yok. Çalıştıkça öğrendiğin kelimeler burada birikecek.'
+              ? 'Henüz Öğrendiklerine eklediğin kelime yok. Bildiğin kelimeleri kartın sol üstündeki ✓ ile ya da ☑️ Seç → ✓ Öğrendim ile ekleyebilirsin; bu kelimeler sana yeniden öğretilmez.'
               : filter === 'favorites'
                 ? 'Henüz favori kelimen yok. Kelime kartındaki ♡ ile ekleyebilirsin.'
               : 'Bu filtrede kelime yok.'}
@@ -169,14 +265,23 @@ export function WordList({ progress, now, initialFilter = 'all' }: { progress: P
       )}
       {list.length > 0 && (
         <ul className="card word-rows">
-          {list.map((w, i) => (
-            <li key={w.id} className="word-row" id={`row-${w.id}`}>
-              <button className="word-row-main" onClick={() => setViewing(i)}>
-                <WordRowContent word={w} progress={progress} />
-              </button>
-              <SpeakButton text={w.en} icon="🔈" />
-            </li>
-          ))}
+          {list.map((w, i) => {
+            const checked = !!selected?.has(w.id);
+            return (
+              <li key={w.id} className={`word-row ${checked ? 'row-selected' : ''}`} id={`row-${w.id}`}>
+                <button
+                  className="word-row-main"
+                  onClick={() => (selecting ? toggleSelected(setSelected, w.id) : setViewing(i))}
+                  role={selecting ? 'checkbox' : undefined}
+                  aria-checked={selecting ? checked : undefined}
+                >
+                  {selecting && <span className={`check ${checked ? 'on' : ''}`}>{checked ? '✓' : ''}</span>}
+                  <WordRowContent word={w} progress={progress} />
+                </button>
+                {!selecting && <SpeakButton text={w.en} icon="🔈" />}
+              </li>
+            );
+          })}
         </ul>
       )}
       {viewing !== null && list[viewing] && (

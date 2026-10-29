@@ -2688,3 +2688,13 @@ input[hidden] + .list-row {
   font-size: 13.5px;
   line-height: 1.45;
 }
+div.list-count-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+div.list-count-line .chip-btn {
+  padding: 5px 10px;
+  font-size: 13px;
+}

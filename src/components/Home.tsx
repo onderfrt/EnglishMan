@@ -13,8 +13,8 @@ interface Props {
   onChangeGoal: () => void;
   onChangeLevel: () => void;
   onSetLevel: (level: Level) => void;
-  /** Hazır kelimeler listesini öğrenilen kelimelere süzülmüş olarak açar. */
-  onOpenLearned: () => void;
+  /** Hazır kelimeler listesini (paket ya da seviye) açar. */
+  onOpenPack: () => void;
   onOpenCustom: () => void;
   onQuickAdd: (en: string) => void;
 }
@@ -52,7 +52,9 @@ export function Home(props: Props) {
   const sourceLeft = unseenWords(progress).length;
   // Paket/seviye ilerlemesi yalnızca paketin ya da seviyenin kelimelerini sayar (kendi kelimeler hariç).
   const packList = sourceList.filter((w) => !w.custom);
-  const packDone = packList.filter((w) => progress.cards[w.id]).length;
+  // Çalışılmış ya da ✓ ile "öğrendim" denmiş kelimeler
+  const packDone = packList.filter((w) => progress.cards[w.id] || isKnown(progress, w.id)).length;
+  const packKnown = packList.filter((w) => isKnown(progress, w.id)).length;
   const upcoming = !pack && level ? nextLevel(level) : null;
   const examDays = pack ? daysUntil(examDate, now) : null;
   const perDayNeeded = examDays ? Math.ceil(sourceLeft / examDays) : null;
@@ -151,16 +153,17 @@ export function Home(props: Props) {
       </form>
 
       <div className="card list-card">
-        <button className="list-row" onClick={props.onOpenLearned}>
+        <button className="list-row" onClick={props.onOpenPack}>
           <span className="icon-box">
             <EmojiArt emoji={pack ? '🎓' : '📚'} />
           </span>
           <span className="list-text">
             <span className="muted small">
-              Öğrendiklerin
+              İlerlemen
               {examDays !== null && (examDays === 0 ? ' · 🎯 Sınav bugün!' : ` · ⏳ Sınava ${examDays} gün`)}
             </span>
             <b>{pack ? PACKS[pack].name : level ? `${level} · ${LEVELS[level].name}` : ''}</b>
+            {packKnown > 0 && <span className="muted small">✓ {packKnown} kelimeyi zaten biliyorsun</span>}
             <span className="meter thin">
               <span style={{ width: `${packList.length ? (packDone / packList.length) * 100 : 0}%` }} />
             </span>

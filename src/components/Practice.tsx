@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { GOALS, LEVELS, PACKS, TOPICS, type TopicId } from '../data/words';
-import { customWords, wordById } from '../lib/catalog';
+import { allWords, customWords, wordById } from '../lib/catalog';
 import { dueCards, EXAM_MAX, sourceWords, unseenWords, type SessionOptions } from '../lib/session';
 import { isKnown, type Progress } from '../lib/storage';
 import { useWordActions } from '../lib/wordActions';
@@ -25,13 +25,14 @@ export function Practice({ progress, onStart, onOpenCustom }: Props) {
   const ownLeft = unseenWords(progress, undefined, true).length;
   // Çalışılmış ya da "öğrendim" diye işaretlenmiş kendi kelimeler
   const ownSeen = own.length - ownLeft;
-  const ownKnown = own.filter((w) => isKnown(progress, w.id));
+  // ✓ ile işaretlenmiş tüm kelimeler (hazır ve kendi)
+  const knownWords = allWords().filter((w) => isKnown(progress, w.id));
   const ownDue = dueCards(progress, Date.now()).filter((c) => wordById(c.wordId)?.custom).length;
   const sourceList = sourceWords(progress).filter((w) => !w.custom);
   const topics = (Object.keys(TOPICS) as TopicId[])
     .map((id) => {
       const total = sourceList.filter((w) => w.topic === id).length;
-      const seen = sourceList.filter((w) => w.topic === id && progress.cards[w.id]).length;
+      const seen = sourceList.filter((w) => w.topic === id && (progress.cards[w.id] || isKnown(progress, w.id))).length;
       return { id, total, seen, left: total - seen };
     })
     .filter((t) => t.total > 0);
@@ -79,15 +80,15 @@ export function Practice({ progress, onStart, onOpenCustom }: Props) {
             {own.length ? `${ownSeen}/${own.length}` : ''} ›
           </span>
         </button>
-        {ownKnown.length > 0 && actions && (
-          <button className="list-row" onClick={() => actions.exam(ownKnown)}>
+        {knownWords.length > 0 && actions && (
+          <button className="list-row" onClick={() => actions.exam(knownWords)}>
             <span className="icon-box">
               <EmojiArt emoji="📝" />
             </span>
             <span className="list-text">
               <b>Öğrendiklerimle kendini sına</b>
               <span className="muted small">
-                {ownKnown.length} kelime · {Math.min(EXAM_MAX, ownKnown.length)} soruluk karışık sınav
+                {knownWords.length} kelime · {Math.min(EXAM_MAX, knownWords.length)} soruluk karışık sınav
               </span>
             </span>
             <span className="chev">›</span>

@@ -23,8 +23,8 @@ export function WordDetails({ word, note, editable, footer, extras = true }: Pro
   const hint = note ?? (editable ? actions?.notes[word.id] : undefined);
   const canEdit = editable && extras && !!actions;
   const favorite = canEdit && actions.isFavorite(word.id);
-  // "Öğrendim" işareti yalnızca kendi kelimelerde: ne zaman öğrendiğine kullanıcı karar verir.
-  const canMarkKnown = canEdit && !!word.custom;
+  // "Öğrendim" (✓): bildiğin kelimeyi öğrenme akışından çıkarır; ne zaman öğrendiğine kullanıcı karar verir.
+  const canMarkKnown = canEdit;
   const known = canMarkKnown && actions.isKnown(word.id);
 
   return (

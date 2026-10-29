@@ -3,7 +3,7 @@ import { wordById } from '../lib/catalog';
 import type { TypedResult } from '../lib/answer';
 import { retryMode, type Step } from '../lib/session';
 import type { CardState } from '../lib/srs';
-import type { Progress } from '../lib/storage';
+import { isKnown, type Progress } from '../lib/storage';
 import { LearnCard } from './LearnCard';
 import { EmojiArt } from './EmojiArt';
 import { Quiz } from './Quiz';
@@ -42,7 +42,14 @@ export function SessionView({ initialSteps, kind = 'study', progress, onGrade, o
   }
 
   const word = wordById(step.wordId)!;
-  const next = () => setIndex((i) => i + 1);
+  // Çalışma sırasında ✓ ile "biliyorum" denen kelimenin kalan adımları atlanır (sınav ve quiz soruları hariç).
+  const skip = (s: Step) => kind === 'study' && !(s.kind === 'quiz' && s.practice) && isKnown(progress, s.wordId);
+  const next = () =>
+    setIndex((i) => {
+      let j = i + 1;
+      while (steps[j] && skip(steps[j])) j++;
+      return j;
+    });
 
   const handleAnswer = (result: TypedResult) => {
     if (step.kind !== 'quiz') return;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PACKS, WORDS, WORDS_BY_ID } from '../data/words';
-import { buildSession, choicesFor, dueCards, EXAM_MAX, examSession, nextLevel, unseenWords } from './session';
+import { buildSession, choicesFor, dueCards, EXAM_MAX, examSession, nextLevel, practiceSession, unseenWords } from './session';
 import { DAY, newCard } from './srs';
 import { daysUntil, emptyProgress, streak } from './storage';
 
@@ -55,6 +55,16 @@ describe('"learned" marks (Öğrendiklerim)', () => {
     expect(unseenWords(p).some((w) => w.id === b.id)).toBe(false);
     p.known[a.id] = { on: false, at: T0 + 1 };
     expect(dueCards(p, T0).map((c) => c.wordId)).toEqual([a.id]);
+  });
+
+  it('does not introduce built-in words marked as already known in a quick quiz', () => {
+    const p = emptyProgress();
+    const [a, b] = WORDS;
+    p.known = { [a.id]: { on: true, at: T0 } };
+    const steps = practiceSession(p, [a.id, b.id], seeded());
+    expect(steps.filter((s) => s.kind === 'learn').map((s) => s.wordId)).toEqual([b.id]);
+    const quizA = steps.find((s) => s.kind === 'quiz' && s.wordId === a.id);
+    expect(quizA).toMatchObject({ graded: false, practice: true });
   });
 
   it('builds an ungraded mixed exam of at most 20 questions without intro cards', () => {

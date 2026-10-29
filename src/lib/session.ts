@@ -155,12 +155,13 @@ export const PRACTICE_MAX = 10;
 export function practiceSession(p: Progress, wordIds: string[], rng: Rng = Math.random): Step[] {
   const isExam = !!(p.settings.goal && GOALS[p.settings.goal].pack);
   const words = wordIds.map((id) => wordById(id)).filter((w): w is Word => !!w).slice(0, PRACTICE_MAX);
-  const fresh = words.filter((w) => !p.cards[w.id]);
+  // ✓ ile "biliyorum" denen kelimeler tanıtılmaz, puanlanmadan sorulur.
+  const fresh = words.filter((w) => !p.cards[w.id] && !isKnown(p, w.id));
   const steps: Step[] = fresh.map((w) => ({ kind: 'learn', wordId: w.id }));
   steps.push(
     ...shuffle(words, rng).map((w): Step => {
       const card = p.cards[w.id];
-      return card
+      return card || isKnown(p, w.id)
         ? { kind: 'quiz', wordId: w.id, mode: modeFor(card, rng, w, isExam), graded: false, practice: true }
         : { kind: 'quiz', wordId: w.id, mode: 'choice-en-tr', graded: true };
     }),

@@ -2,14 +2,14 @@ import { useState } from 'react';
 import type { Level, Word } from '../data/words';
 import { useBack } from '../lib/back';
 import { customWords } from '../lib/catalog';
-import { isKnown, type Progress } from '../lib/storage';
+import type { Progress } from '../lib/storage';
 import { useWordActions } from '../lib/wordActions';
 import { CustomWordForm } from './CustomWordForm';
 import { EmojiArt } from './EmojiArt';
 import { ImportWords } from './ImportWords';
 import { SpeakButton } from './Speak';
 import { WordViewer } from './WordViewer';
-import { ExamBanner, FilterChips, matchesFilter, WordRowContent, type Filter } from './WordList';
+import { ExamBanner, FilterChips, markMessage, matchesFilter, SelectBar, toggleSelected, WordRowContent, type Filter } from './WordList';
 
 interface Props {
   progress: Progress;
@@ -88,26 +88,6 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
     .reverse(); // En son eklenen en üstte
 
   const selecting = selected !== null;
-  const toggle = (id: string) =>
-    setSelected((sel) => {
-      const next = new Set(sel);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  const allVisibleSelected = selecting && list.length > 0 && list.every((w) => selected.has(w.id));
-  // Seçilenlerin hepsi zaten Öğrendiklerimdeyse düğme onları çıkarır, değilse hepsini ekler.
-  const allSelectedKnown = !!selected?.size && [...selected].every((id) => isKnown(progress, id));
-  const markSelected = () => {
-    if (!selected?.size || !actions) return;
-    actions.setKnown([...selected], !allSelectedKnown);
-    setMessage(
-      allSelectedKnown
-        ? `↩ ${selected.size} kelime Öğrendiklerimden çıkarıldı; yeniden öğrenme akışına döndü.`
-        : `✓ ${selected.size} kelime Öğrendiklerime eklendi. Artık günlük tekrarlarda çıkmayacak; istediğin zaman kendini sınayabilirsin.`,
-    );
-    setSelected(null);
-  };
   const deleteSelected = () => {
     if (!selected?.size) return;
     if (!confirm(`${selected.size} kelime, ilerlemeleri ve fotoğraflarıyla birlikte silinecek. Emin misin?`)) return;
@@ -119,34 +99,22 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
   return (
     <div className="word-list custom-words">
       {selecting ? (
-        <div className="select-bar">
-          <button className="btn" onClick={() => setSelected(null)}>
-            ✕ Bitti
-          </button>
-          <button
-            className="btn"
-            onClick={() =>
-              setSelected((sel) => {
-                const next = new Set(sel);
-                for (const w of list) {
-                  if (allVisibleSelected) next.delete(w.id);
-                  else next.add(w.id);
-                }
-                return next;
-              })
-            }
-          >
-            {allVisibleSelected ? 'Seçimi kaldır' : q ? `Bulunanları seç (${list.length})` : 'Tümünü seç'}
-          </button>
-          {actions && (
-            <button className="btn btn-good" onClick={markSelected} disabled={!selected.size}>
-              {allSelectedKnown ? `↩ Öğrendiklerimden çıkar (${selected.size})` : `✓ Öğrendim (${selected.size})`}
-            </button>
-          )}
+        <SelectBar
+          list={list}
+          selected={selected}
+          setSelected={setSelected}
+          progress={progress}
+          filtered={!!q || filter !== 'all'}
+          onMark={(ids, on) => {
+            actions?.setKnown(ids, on);
+            setMessage(markMessage(ids.length, on));
+            setSelected(null);
+          }}
+        >
           <button className="btn btn-danger" onClick={deleteSelected} disabled={!selected.size}>
             🗑️ Sil ({selected.size})
           </button>
-        </div>
+        </SelectBar>
       ) : (
         <div className="row">
           <button className="btn btn-primary" onClick={() => setMode({ kind: 'edit' })}>
@@ -208,7 +176,7 @@ export function CustomWords({ progress, now, level, onSave, onDelete, onImport, 
                 <li key={w.id} className={`word-row ${checked ? 'row-selected' : ''}`} id={`row-${w.id}`}>
                   <button
                     className="word-row-main"
-                    onClick={() => (selecting ? toggle(w.id) : setViewing(i))}
+                    onClick={() => (selecting ? toggleSelected(setSelected, w.id) : setViewing(i))}
                     role={selecting ? 'checkbox' : undefined}
                     aria-checked={selecting ? checked : undefined}
                   >

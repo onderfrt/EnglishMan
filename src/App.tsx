@@ -65,7 +65,7 @@ export default function App() {
   const [intro, setIntro] = useState(() => !progress.settings.goal && !introSeen());
   // Ana sayfadaki hızlı ekleme: Kelimelerim'de bu kelimeyle doldurulmuş form açılır.
   const [quickAdd, setQuickAdd] = useState<{ en: string; n: number } | null>(null);
-  // Ana sayfadaki "Öğrendiklerin" sayacından gelince hazır kelimeler öğrenilenlere süzülü açılır.
+  // Kelimeler sekmesine belirli bir durum süzgeciyle gelmek için (her gelişte liste yeniden kurulur).
   const [wordsFilter, setWordsFilter] = useState<{ filter: Filter; n: number } | null>(null);
   const sync = useSync();
 
@@ -338,8 +338,8 @@ export default function App() {
             setWordsView('custom');
             setTab('words');
           }}
-          onOpenLearned={() => {
-            setWordsFilter((f) => ({ filter: 'learned', n: (f?.n ?? 0) + 1 }));
+          onOpenPack={() => {
+            setWordsFilter((f) => ({ filter: 'all', n: (f?.n ?? 0) + 1 }));
             setWordsView('builtin');
             setTab('words');
           }}

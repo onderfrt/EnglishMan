@@ -165,7 +165,7 @@ export function WordViewer({ words, index, progress, now, onIndexChange, onClose
             word={word}
             editable
             footer={
-              word.custom && wordActions?.isKnown(word.id)
+              wordActions?.isKnown(word.id)
                 ? 'Öğrendiklerimde · günlük tekrarlarda çıkmaz'
                 : card
                   ? `Tekrar: ${formatDue(card.due, now)}`

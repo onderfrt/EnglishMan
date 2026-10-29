@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useBack } from '../lib/back';
 import { EmojiArt } from './EmojiArt';
 
-const SEEN_KEY = 'englishman:words-help-seen:v1';
+// Anlatılan özellikler değişince sürüm artar; "yeni" noktası yeniden görünür.
+const SEEN_KEY = 'englishman:words-help-seen:v2';
 
 function seen(): boolean {
   try {
@@ -16,12 +17,12 @@ const TIPS: { emoji: string; title: string; text: string }[] = [
   {
     emoji: '✅',
     title: 'Öğrendim işareti',
-    text: 'Kendi kelimelerinde kartın sol üstündeki ✓ ile kelimeyi Öğrendiklerine gönder. Bu kelimeler artık günlük tekrarlarda çıkmaz. Fikrini değiştirirsen ✓’ye yeniden dokunman yeter.',
+    text: 'Kartın sol üstündeki ✓ ile kelimeyi Öğrendiklerine gönder. Hazır kelimelerde “bunu zaten biliyorum” demektir: kelime sana öğretilmez. Bu kelimeler günlük tekrarlarda da çıkmaz. Fikrini değiştirirsen ✓’ye yeniden dokunman yeter.',
   },
   {
     emoji: '☑️',
     title: 'Toplu işaretle',
-    text: 'Kelimelerim’de Seç’e dokun, kelimeleri seç ve “✓ Öğrendim” de. Hepsi zaten Öğrendiklerindeyse aynı düğme onları geri çıkarır.',
+    text: 'Hazır kelimelerde ya da Kelimelerim’de “☑️ Seç”e dokun, kelimeleri seç ve “✓ Öğrendim” de (ör. bildiğin A1 kelimelerinin hepsi). Hepsi zaten Öğrendiklerindeyse aynı düğme onları geri çıkarır.',
   },
   {
     emoji: '📝',
